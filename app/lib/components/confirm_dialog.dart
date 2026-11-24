@@ -28,6 +28,10 @@ class ConfirmDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: TandemTokens.color_surface,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: TandemTokens.space_4,
+        vertical: TandemTokens.space_5,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
         side: const BorderSide(color: TandemTokens.color_border, width: 0.5),
@@ -52,23 +56,27 @@ class ConfirmDialog extends StatelessWidget {
                 style: TandemTokens.text_md,
               ),
               const SizedBox(height: TandemTokens.space_6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TandemButton(
-                    label: cancelLabel,
-                    variant: TandemButtonVariant.secondary,
-                    onPressed: onCancel,
-                  ),
-                  const SizedBox(width: TandemTokens.space_3),
-                  TandemButton(
-                    label: confirmLabel,
-                    variant: isDestructive
-                        ? TandemButtonVariant.destructive
-                        : TandemButtonVariant.primary,
-                    onPressed: onConfirm,
-                  ),
-                ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: TandemTokens.space_3,
+                  runSpacing: TandemTokens.space_3,
+                  children: [
+                    TandemButton(
+                      label: cancelLabel,
+                      variant: TandemButtonVariant.secondary,
+                      onPressed: onCancel,
+                    ),
+                    TandemButton(
+                      label: confirmLabel,
+                      variant: isDestructive
+                          ? TandemButtonVariant.destructive
+                          : TandemButtonVariant.primary,
+                      onPressed: onConfirm,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
