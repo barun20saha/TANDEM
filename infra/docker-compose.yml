@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Self-hosted Syncthing Relay Server (strelaysrv)
+  relay:
+    image: syncthing/relaysrv:latest
+    container_name: tandem-relay
+    restart: unless-stopped
+    ports:
+      - "22067:22067" # Relay data protocol
+      - "22070:22070" # Status & health metrics
+    command:
+      - "-pools="     # Set empty to run as a private relay (not joined to public pool)
+      - "-status-srv=:22070"
+      - "-nat"
+    environment:
+      - PUID=1000
+      - PGID=1000
+
+  # Self-hosted Syncthing Discovery Server (syncthing-discosrv)
+  discovery:
+    image: syncthing/discosrv:latest
+    container_name: tandem-discovery
+    restart: unless-stopped
+    ports:
+      - "8443:8443"   # Discovery REST protocol
+    command:
+      - "-listen=:8443"
+    environment:
+      - PUID=1000
+      - PGID=1000
