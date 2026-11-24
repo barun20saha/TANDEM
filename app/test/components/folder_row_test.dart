@@ -27,6 +27,7 @@ void main() {
       expect(find.textContaining('2 devices'), findsOneWidget);
 
       await tester.tap(find.byType(FolderRow));
+      await tester.pump();
       expect(tapped, isTrue);
     });
   });

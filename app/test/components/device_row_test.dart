@@ -27,6 +27,7 @@ void main() {
       expect(find.textContaining('2m ago'), findsOneWidget);
 
       await tester.tap(find.byType(DeviceRow));
+      await tester.pump();
       expect(tapped, isTrue);
     });
 
