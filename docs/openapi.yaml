@@ -1,0 +1,526 @@
+openapi: 3.0.3
+info:
+  title: Tandem Local Daemon API (tandemd)
+  description: |
+    Localhost-only HTTP and Event API exposed by `tandemd` for UI clients (Flutter / CLI).
+    Never exposed to external network interfaces; bound strictly to 127.0.0.1 with bearer token authentication.
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8385/api/v1
+    description: Local daemon loopback API
+
+security:
+  - BearerAuth: []
+
+paths:
+  /status:
+    get:
+      summary: Get daemon and sync engine status
+      operationId: getStatus
+      responses:
+        '200':
+          description: Current daemon status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaemonStatus'
+
+  /health:
+    get:
+      summary: Get system health, permissions, and firewall status
+      operationId: getHealth
+      responses:
+        '200':
+          description: System health details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealth'
+
+  /devices:
+    get:
+      summary: List all paired and discovered devices
+      operationId: listDevices
+      responses:
+        '200':
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+    post:
+      summary: Pair a new remote device
+      operationId: pairDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairDeviceRequest'
+      responses:
+        '201':
+          description: Device paired successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /devices/{deviceId}:
+    get:
+      summary: Get details for a specific device
+      operationId: getDevice
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Unpair and remove a remote device
+      operationId: unpairDevice
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Device unpaired
+
+  /folders:
+    get:
+      summary: List all synced folders
+      operationId: listFolders
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Folder'
+    post:
+      summary: Add a new folder to sync
+      operationId: addFolder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddFolderRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /folders/{folderId}:
+    get:
+      summary: Get folder details and sync state
+      operationId: getFolder
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update folder settings (paused, shared devices, folder type)
+      operationId: updateFolder
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFolderRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+    delete:
+      summary: Stop syncing folder (files remain on disk)
+      operationId: removeFolder
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Folder removed from sync
+
+  /send:
+    post:
+      summary: Initiate an ephemeral Send session (one-off transfer)
+      operationId: initiateSend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendSessionRequest'
+      responses:
+        '202':
+          description: Send session initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendSession'
+
+  /send/{sessionId}:
+    get:
+      summary: Get progress of an active or recent Send session
+      operationId: getSendSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendSession'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /pairing/code:
+    get:
+      summary: Generate pairing QR payload and short match code
+      operationId: getPairingCode
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairingPayload'
+
+  /pairing/confirm:
+    post:
+      summary: Confirm bidirectional pairing code match
+      operationId: confirmPairing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmPairingRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairingResult'
+
+  /events:
+    get:
+      summary: Stream real-time events via Server-Sent Events (SSE)
+      operationId: streamEvents
+      responses:
+        '200':
+          description: SSE stream of sync, device, and network events
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    DaemonStatus:
+      type: object
+      required:
+        - version
+        - myDeviceId
+        - myDeviceName
+        - state
+        - hasInternet
+      properties:
+        version:
+          type: string
+        myDeviceId:
+          type: string
+        myDeviceName:
+          type: string
+        state:
+          type: string
+          enum: [starting, idle, syncing, error]
+        hasInternet:
+          type: boolean
+        activeTransfers:
+          type: integer
+
+    SystemHealth:
+      type: object
+      required:
+        - firewallState
+        - discoveryWorks
+        - storageOk
+      properties:
+        firewallState:
+          type: string
+          enum: [open, blocked, unknown]
+        firewallRemediation:
+          type: string
+        discoveryWorks:
+          type: boolean
+        storageOk:
+          type: boolean
+        inotifyExhausted:
+          type: boolean
+        batteryOptimized:
+          type: boolean
+
+    Device:
+      type: object
+      required:
+        - id
+        - name
+        - linkState
+        - isPaired
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isPaired:
+          type: boolean
+        linkState:
+          type: string
+          enum: [direct-local, direct-internet, relayed, connecting, offline]
+        lastSeen:
+          type: string
+          format: date-time
+        addresses:
+          type: array
+          items:
+            type: string
+        uploadRateBytesPerSec:
+          type: integer
+        downloadRateBytesPerSec:
+          type: integer
+
+    Folder:
+      type: object
+      required:
+        - id
+        - path
+        - type
+        - state
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        path:
+          type: string
+        type:
+          type: string
+          enum: [sendreceive, sendonly, receiveonly]
+        state:
+          type: string
+          enum: [idle, syncing, paused, conflict, error]
+        paused:
+          type: boolean
+        sharedDevices:
+          type: array
+          items:
+            type: string
+        totalBytes:
+          type: integer
+        totalFiles:
+          type: integer
+        trashCount:
+          type: integer
+
+    PairDeviceRequest:
+      type: object
+      required:
+        - deviceId
+        - name
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        addressHint:
+          type: string
+
+    AddFolderRequest:
+      type: object
+      required:
+        - path
+        - type
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        path:
+          type: string
+        type:
+          type: string
+          enum: [sendreceive, sendonly, receiveonly]
+        sharedDevices:
+          type: array
+          items:
+            type: string
+
+    UpdateFolderRequest:
+      type: object
+      properties:
+        paused:
+          type: boolean
+        sharedDevices:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          enum: [sendreceive, sendonly, receiveonly]
+
+    SendSessionRequest:
+      type: object
+      required:
+        - targetDeviceId
+        - filePaths
+      properties:
+        targetDeviceId:
+          type: string
+        filePaths:
+          type: array
+          items:
+            type: string
+
+    SendSession:
+      type: object
+      required:
+        - sessionId
+        - targetDeviceId
+        - state
+        - progress
+      properties:
+        sessionId:
+          type: string
+        targetDeviceId:
+          type: string
+        state:
+          type: string
+          enum: [queued, sending, completed, failed, cancelled]
+        filesSent:
+          type: integer
+        totalFiles:
+          type: integer
+        bytesSent:
+          type: integer
+        totalBytes:
+          type: integer
+        speedBytesPerSec:
+          type: integer
+        interfaceUsed:
+          type: string
+
+    PairingPayload:
+      type: object
+      required:
+        - deviceId
+        - name
+        - qrPayload
+        - shortCode
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+        qrPayload:
+          type: string
+        shortCode:
+          type: string
+
+    ConfirmPairingRequest:
+      type: object
+      required:
+        - targetDeviceId
+        - confirmedCode
+      properties:
+        targetDeviceId:
+          type: string
+        confirmedCode:
+          type: string
+
+    PairingResult:
+      type: object
+      required:
+        - success
+        - deviceId
+      properties:
+        success:
+          type: boolean
+        deviceId:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        remediation:
+          type: string

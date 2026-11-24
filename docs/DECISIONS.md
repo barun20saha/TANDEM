@@ -51,15 +51,13 @@ This document records architectural decisions, `VERIFY` resolutions against upst
 ## 2. Decision Gates
 
 ### DECISION D3 (Phase 0): UI Toolkit Selection
-- **Status:** PENDING HUMAN DECISION
-- **Options:**
-  - **Option 1 (Recommended): Flutter (Single Cross-Platform Codebase)**
-    - *Pros:* Single codebase across Windows, macOS, Linux, and Android. Direct support for custom layout, canvas rendering for signature `LinkLine`, theme tokens, and unified localization deck.
-    - *Cons:* Binary size is slightly larger; requires Flutter SDK.
-  - **Option 2: Tauri (Desktop: Windows/macOS/Linux) + Kotlin/Jetpack Compose (Android)**
-    - *Pros:* Native Android look and feel; small web-view footprint on desktop.
-    - *Cons:* Two independent UI codebases to build, maintain, audit for design tokens, and localize. Double the testing and development surface.
-- **Recommendation:** Option 1 (Flutter) as outlined in Section 3.1 and 7 (Phase 0).
+- **Status:** DECIDED (Option 1: Flutter)
+- **Decision:** Use a single cross-platform UI codebase built with Flutter, communicating with the local `tandemd` daemon over localhost REST API.
+- **Rationale:**
+  - Single codebase across Windows, macOS, Linux, and Android eliminates divergence between platforms.
+  - Native canvas drawing provides precise control for the signature `LinkLine` element and smooth cross-platform animations.
+  - Centralized design tokens (design/tokens.json) map cleanly to Flutter ThemeData and design system widgets.
+  - Avoids maintaining two separate UI implementations (Tauri + native Kotlin), cutting test surface and duplication in half.
 
 ---
 

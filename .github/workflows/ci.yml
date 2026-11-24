@@ -1,0 +1,40 @@
+name: Tandem CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pal-contract-tests:
+    name: PAL Contract Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run PAL Contract Tests
+        working-directory: core
+        run: go test -v ./pal/... ./pal_linux/... ./pal_windows/... ./pal_darwin/... ./pal_android/...
+
+      - name: Run Compat Engine Tests
+        working-directory: core
+        run: go test -v ./engine/compat/...
+
+      - name: Run API Tests
+        working-directory: core
+        run: go test -v ./api/...
+
+      - name: Build tandemd binary
+        working-directory: core
+        run: go build -v ./cmd/tandemd
