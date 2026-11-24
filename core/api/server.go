@@ -117,7 +117,13 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Enforce loopback check
 		host, _, _ := net.SplitHostPort(r.RemoteAddr)
-		if host != "127.0.0.1" && host != "::1" && host != "localhost" {
+		isLoopback := host == "127.0.0.1" || host == "::1" || host == "localhost"
+		if ip := net.ParseIP(host); ip != nil {
+			if ip.IsLoopback() || (ip.To4() != nil && ip.To4().IsLoopback()) {
+				isLoopback = true
+			}
+		}
+		if !isLoopback {
 			http.Error(w, "Forbidden: loopback access only", http.StatusForbidden)
 			return
 		}

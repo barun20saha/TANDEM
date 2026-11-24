@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -55,8 +56,20 @@ func TestLocalAPIEndpoints(t *testing.T) {
 		_ = server.Start(ctx)
 	}()
 
-	// Wait for server to be ready
-	time.Sleep(100 * time.Millisecond)
+	// Wait for server to be ready with retry polling
+	ready := false
+	for i := 0; i < 60; i++ {
+		time.Sleep(50 * time.Millisecond)
+		conn, err := net.DialTimeout("tcp", bindAddr, 100*time.Millisecond)
+		if err == nil {
+			conn.Close()
+			ready = true
+			break
+		}
+	}
+	if !ready {
+		t.Fatalf("server failed to start on %s within timeout", bindAddr)
+	}
 
 	baseURL := "http://" + bindAddr + "/api/v1"
 	client := &http.Client{Timeout: 2 * time.Second}

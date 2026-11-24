@@ -1,3 +1,5 @@
+//go:build linux
+
 package pal_linux_test
 
 import (
