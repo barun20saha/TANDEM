@@ -1,0 +1,31 @@
+# Binaries and build artifacts
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.apk
+*.a
+
+# Temporary files
+.tandem-tmp/
+*.tmp
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+.Trash*
+~$*
+
+# Go artifacts
+*.test
+vendor/
+
+# Flutter / Node artifacts
+.dart_tool/
+build/
+node_modules/
+.idea/
+.vscode/
