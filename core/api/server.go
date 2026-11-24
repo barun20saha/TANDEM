@@ -31,9 +31,10 @@ type Server struct {
 	fwAdapter   pal.Firewall
 	linkMgr     *linkmanager.Manager
 	pairingSvc  *pairing.Service
-	httpServer  *http.Server
-	mu          sync.RWMutex
-	devices     map[string]map[string]interface{}
+	httpServer   *http.Server
+	mu           sync.RWMutex
+	addr         string
+	devices      map[string]map[string]interface{}
 	folders     map[string]map[string]interface{}
 	sendSessions map[string]map[string]interface{}
 	eventChans  map[chan string]struct{}
@@ -90,6 +91,10 @@ func (s *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to bind loopback API on %s: %w", s.cfg.BindAddr, err)
 	}
 
+	s.mu.Lock()
+	s.addr = listener.Addr().String()
+	s.mu.Unlock()
+
 	s.httpServer = &http.Server{
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
@@ -110,6 +115,13 @@ func (s *Server) Stop() error {
 		return s.httpServer.Close()
 	}
 	return nil
+}
+
+// Addr returns the network address the server is listening on.
+func (s *Server) Addr() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.addr
 }
 
 // Authentication middleware enforcing Bearer token verification.

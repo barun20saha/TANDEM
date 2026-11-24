@@ -155,6 +155,10 @@ func AtomicWriteTemp(targetPath string, src io.Reader, expectedHash string) (int
 
 // SafePath checks that the target relative path does not escape root (no symlink traversal outside root).
 func SafePath(root, relPath string) (string, error) {
+	if strings.HasPrefix(relPath, "/") || strings.HasPrefix(relPath, "\\") {
+		return "", errors.New("absolute path traversal outside sync root detected")
+	}
+
 	cleaned := filepath.Clean(relPath)
 	if strings.HasPrefix(cleaned, "..") || filepath.IsAbs(cleaned) {
 		return "", errors.New("path traversal outside sync root detected")

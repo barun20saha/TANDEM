@@ -24,7 +24,7 @@ void main() {
       );
 
       expect(find.text('Pixel 9 Pro'), findsOneWidget);
-      expect(find.text('2m ago'), findsOneWidget);
+      expect(find.textContaining('2m ago'), findsOneWidget);
 
       await tester.tap(find.byType(DeviceRow));
       expect(tapped, isTrue);

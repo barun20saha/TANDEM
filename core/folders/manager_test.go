@@ -3,6 +3,7 @@ package folders_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -45,8 +46,12 @@ func TestFolderManagement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ScanConflicts failed: %v", err)
 	}
-	if len(conflicts) != 1 {
-		t.Errorf("expected 1 case collision conflict, got %d (%v)", len(conflicts), conflicts)
+	// Case collisions on disk can only occur on case-sensitive filesystems (e.g. Linux ext4).
+	// On Windows NTFS and macOS APFS, the second write overwrites the first on disk.
+	if runtime.GOOS == "linux" {
+		if len(conflicts) != 1 {
+			t.Errorf("expected 1 case collision conflict on Linux, got %d (%v)", len(conflicts), conflicts)
+		}
 	}
 
 	// 4. Safe delete through trash

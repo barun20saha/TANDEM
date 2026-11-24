@@ -39,9 +39,8 @@ func TestLocalAPIEndpoints(t *testing.T) {
 	pairingSvc := pairing.NewService("TEST-DEV-ID-A", "Test Laptop")
 
 	apiKey := "test-token"
-	bindAddr := "127.0.0.1:9385"
 	cfg := api.ServerConfig{
-		BindAddr:   bindAddr,
+		BindAddr:   "127.0.0.1:0",
 		APIKey:     apiKey,
 		Version:    "0.1.0-test",
 		DeviceID:   "TEST-DEV-ID-A",
@@ -56,22 +55,26 @@ func TestLocalAPIEndpoints(t *testing.T) {
 		_ = server.Start(ctx)
 	}()
 
-	// Wait for server to be ready with retry polling
+	// Wait for server to bind and be ready
 	ready := false
+	var actualAddr string
 	for i := 0; i < 60; i++ {
 		time.Sleep(50 * time.Millisecond)
-		conn, err := net.DialTimeout("tcp", bindAddr, 100*time.Millisecond)
-		if err == nil {
-			conn.Close()
-			ready = true
-			break
+		actualAddr = server.Addr()
+		if actualAddr != "" {
+			conn, err := net.DialTimeout("tcp", actualAddr, 100*time.Millisecond)
+			if err == nil {
+				conn.Close()
+				ready = true
+				break
+			}
 		}
 	}
 	if !ready {
-		t.Fatalf("server failed to start on %s within timeout", bindAddr)
+		t.Fatalf("server failed to start on dynamic loopback within timeout")
 	}
 
-	baseURL := "http://" + bindAddr + "/api/v1"
+	baseURL := "http://" + actualAddr + "/api/v1"
 	client := &http.Client{Timeout: 2 * time.Second}
 
 	// 1. Test unauthorized request
