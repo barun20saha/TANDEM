@@ -64,5 +64,7 @@ In accordance with Section 0 (Rule 7) and Section 11 of the Tandem Agent Guide, 
 - [x] Far-away sync works directly when NAT allows, with transparent relay fallback and dynamic migration.
 - [x] No user file is deleted without a recoverable copy in `.tandem-trash` with 30-day retention.
 - [x] Design token audit: 100% token coverage, 0 hardcoded values outside tokens (`design/AUDIT.md`).
+- [x] All 11 primary screen specs authored (`design/handoff/s1_first_run.md` - `s11_activity.md`) and Flutter screens implemented (S1–S11).
+- [x] Standalone distribution packages generated in `bin/` (`tandem_0.1.0_amd64.deb`, `tandemd`, `tandemd_darwin_amd64`, `tandemd_darwin_arm64`, `tandemd.exe`).
 - [x] All user-facing strings are localized in `app/lib/l10n/app_en.json` following the glossary.
 - [x] Third-party licence notices complete in `THIRD_PARTY_NOTICES.md`.
