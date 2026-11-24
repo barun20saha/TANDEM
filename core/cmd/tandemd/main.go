@@ -75,11 +75,15 @@ func main() {
 	baseDir := *configDirFlag
 	if baseDir == "" {
 		home, err := os.UserHomeDir()
-		if err != nil {
-			baseDir = filepath.Join(".", ".tandem")
-		} else {
+		if err == nil {
 			baseDir = filepath.Join(home, ".config", "tandem")
 		}
+		if err := os.MkdirAll(baseDir, 0700); err != nil {
+			baseDir = filepath.Join(".", ".tandem")
+			_ = os.MkdirAll(baseDir, 0700)
+		}
+	} else {
+		_ = os.MkdirAll(baseDir, 0700)
 	}
 
 	engineCfg, err := engine.DefaultConfig(baseDir)
