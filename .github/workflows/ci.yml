@@ -1,4 +1,4 @@
-name: Tandem CI
+name: Tandem CI & Release Automation
 
 on:
   push:
@@ -7,15 +7,15 @@ on:
     branches: [ main ]
 
 jobs:
-  pal-contract-tests:
-    name: PAL Contract Tests (${{ matrix.os }})
+  core-matrix:
+    name: Core Engine & PAL (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Go
@@ -23,18 +23,79 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Run PAL Contract Tests
+      - name: Run Core Test Suite
         working-directory: core
-        run: go test -v ./pal/... ./pal_linux/... ./pal_windows/... ./pal_darwin/... ./pal_android/...
+        run: go test -v ./...
 
-      - name: Run Compat Engine Tests
-        working-directory: core
-        run: go test -v ./engine/compat/...
+      - name: Run Chaos Test Suite
+        if: runner.os == 'Linux'
+        working-directory: tests/chaos
+        run: go test -v .
 
-      - name: Run API Tests
+      - name: Build tandemd Binary
         working-directory: core
-        run: go test -v ./api/...
+        run: go build -v -o ../bin/tandemd_${{ matrix.os }} ./cmd/tandemd
 
-      - name: Build tandemd binary
-        working-directory: core
-        run: go build -v ./cmd/tandemd
+  design-audit:
+    name: Design System Token Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Design Token Audit
+        run: python3 design/audit.py
+
+      - name: Verify Audit Report
+        run: |
+          grep "Hard-coded color violations outside tokens.dart: 0" design/AUDIT.md
+          grep "Overall Component Completeness Score: 100.0%" design/AUDIT.md
+
+  flutter-app:
+    name: Flutter App & Widget Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+
+      - name: Install Dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Run Flutter Widget Tests
+        working-directory: app
+        run: flutter test
+
+  packaging:
+    name: Build Standalone Packages
+    runs-on: ubuntu-latest
+    needs: [core-matrix, design-audit]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build Debian Package
+        run: bash scripts/package_deb.sh
+
+      - name: Upload Debian Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: tandem-debian-package
+          path: bin/*.deb
+          if-no-files-found: error
