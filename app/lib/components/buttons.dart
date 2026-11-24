@@ -74,13 +74,10 @@ class TandemButton extends StatelessWidget {
       ),
       child: Material(
         color: bg,
-        borderRadius: BorderRadius.circular(TandemTokens.radius_control),
-        shape: border != BorderSide.none
-            ? RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(TandemTokens.radius_control),
-                side: border,
-              )
-            : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TandemTokens.radius_control),
+          side: border,
+        ),
         child: InkWell(
           onTap: (isLoading || onPressed == null) ? null : onPressed,
           borderRadius: BorderRadius.circular(TandemTokens.radius_control),
