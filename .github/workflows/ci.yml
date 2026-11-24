@@ -80,7 +80,14 @@ jobs:
 
       - name: Run Flutter Widget Tests
         working-directory: app
-        run: flutter test --reporter expanded
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee /tmp/flutter_test.log || {
+            tail -n 60 /tmp/flutter_test.log | while IFS= read -r l; do
+              echo "::error::$l"
+            done
+            exit 1
+          }
 
   packaging:
     name: Build Standalone Packages
