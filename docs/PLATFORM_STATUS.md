@@ -29,3 +29,14 @@ In accordance with Section 0 (Rule 7) and Section 11 of the Tandem Agent Guide, 
 - **Autostart:** Verified. Generates and validates systemd user service unit with enable/disable lifecycle.
 - **Cross-OS Compatibility Rules:** 100% passing (`core/engine/compat`). Tested Windows reserved device names, invalid characters, trailing dots, OS junk ignore patterns, case collision detection, atomic temp write with SHA-256 validation, and symlink traversal prevention.
 - **Local API:** OpenAPI 3.0 specification ([docs/openapi.yaml](file:///home/barun/Desktop/TANDEM/docs/openapi.yaml)) implemented and verified via integration test suite (`core/api/server_test.go`).
+
+### Phase 2: Android Core Implementation Status
+- **Architecture Implemented:**
+  - JNI / CGO runtime bridge implemented in `core/pal_android/bridge.go` with lifecycle tests passing (`core/pal_android/bridge_test.go`).
+  - Android Manifest ([app/android/app/src/main/AndroidManifest.xml](file:///home/barun/Desktop/TANDEM/app/android/app/src/main/AndroidManifest.xml)) declared with `FOREGROUND_SERVICE_DATA_SYNC`, `MANAGE_EXTERNAL_STORAGE` (D5), `NEARBY_WIFI_DEVICES`, and network/multicast permissions.
+  - Foreground service ([TandemService.kt](file:///home/barun/Desktop/TANDEM/app/android/app/src/main/kotlin/com/tandem/sync/TandemService.kt)) implemented with `WifiManager.MulticastLock`, dynamic partial wake lock and Wi-Fi perf lock acquisition bounded to active transfers (D4).
+  - Network callback and socket binding ([NetworkManager.kt](file:///home/barun/Desktop/TANDEM/app/android/app/src/main/kotlin/com/tandem/sync/NetworkManager.kt)) for binding sockets directly to local Wi-Fi without internet.
+  - Local-only Hotspot helper ([HotspotHelper.kt](file:///home/barun/Desktop/TANDEM/app/android/app/src/main/kotlin/com/tandem/sync/HotspotHelper.kt)) with Wi-Fi QR code formatting (`WIFI:T:WPA;S:<ssid>;P:<pass>;;`).
+- **Hardware Validation Status (Honest Reporting - Rule 7):**
+  - Host environment is Ubuntu 24.04 x86_64 container without attached physical Android devices.
+  - Physical 30-minute screen-off verification on multi-brand OEM hardware and physical WAN-unplugged router tests are pending external target device verification. Code path and contracts are verified.

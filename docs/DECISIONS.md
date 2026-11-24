@@ -61,8 +61,24 @@ This document records architectural decisions, `VERIFY` resolutions against upst
 
 ---
 
+### DECISION D4 (Phase 2): Android Background Policy
+- **Status:** DECIDED (Option 1: Wi-Fi/Charging Default with Always-On Toggle)
+- **Decision:** Default to syncing while connected to Wi-Fi or charging, with an explicit "Always on" toggle in Settings.
+- **Rationale:**
+  - Preserves user battery life and avoids aggressive background kill on aggressive OEM ROMs.
+  - Holds partial wake locks and high-performance Wi-Fi locks only during active block transfers.
+  - Prompts for battery-optimization exemption with a plain one-line explanation when the user enables "Always on".
+
+### DECISION D5 (Phase 2): Android Storage Model & Distribution
+- **Status:** DECIDED (Option 1: Dual Distribution Model)
+- **Decision:**
+  - Sideload / F-Droid builds utilize `MANAGE_EXTERNAL_STORAGE` (All-files access) for unrestricted photo and arbitrary folder synchronization.
+  - Google Play builds utilize Storage Access Framework (SAF) and `MediaStore` API conforming to Google Play policy, with documented performance trade-offs.
+- **Rationale:**
+  - Allows full, high-performance camera syncing without thumbnail/rename bottlenecks for direct users while maintaining store compliance.
+
+---
+
 ## 3. Future Decision Gates Reference
 - **DECISION D1 (before Phase 4):** Full copy vs. on-demand file placeholders.
 - **DECISION D2 (before Phase 4):** Send design: ephemeral single-recipient folder over BEP vs. separate HTTPS transfer protocol.
-- **DECISION D4 (Phase 2):** Android background policy (sync on Wi-Fi/charging vs. always-on).
-- **DECISION D5 (Phase 2):** Android storage model and distribution channel (All-files access for direct/F-Droid vs. SAF/MediaStore for Google Play).
