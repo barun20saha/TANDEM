@@ -117,7 +117,7 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                           TandemButton(
                             label: check['action'] as String,
                             variant: TandemButtonVariant.secondary,
-                            size: TandemButtonSize.sm,
+                            size: TandemButtonSize.md,
                             onPressed: () {},
                           ),
                         ],

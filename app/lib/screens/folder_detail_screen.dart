@@ -189,7 +189,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
           Center(
             child: TandemButton(
               label: 'Stop syncing this folder',
-              variant: TandemButtonVariant.danger,
+              variant: TandemButtonVariant.destructive,
               onPressed: _showStopSyncDialog,
             ),
           ),

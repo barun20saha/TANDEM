@@ -113,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 TandemButton(
                   label: 'Empty trash now',
                   variant: TandemButtonVariant.secondary,
-                  size: TandemButtonSize.sm,
+                  size: TandemButtonSize.md,
                   onPressed: _showEmptyTrashDialog,
                 ),
               ],

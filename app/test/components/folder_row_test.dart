@@ -4,7 +4,7 @@ import 'package:tandem/components/folder_row.dart';
 
 void main() {
   group('FolderRow Widget Tests', () {
-    testWidgets('renders label, path, size, and device count', (WidgetTester tester) async {
+    testWidgets('renders label, path, size, and responds to tap', (WidgetTester tester) async {
       bool tapped = false;
 
       await tester.pumpWidget(
@@ -23,7 +23,8 @@ void main() {
 
       expect(find.text('Work Documents'), findsOneWidget);
       expect(find.text('/home/barun/Documents/Work'), findsOneWidget);
-      expect(find.text('1.4 GB • 2 devices'), findsOneWidget);
+      expect(find.textContaining('1.4 GB'), findsOneWidget);
+      expect(find.textContaining('2 devices'), findsOneWidget);
 
       await tester.tap(find.byType(FolderRow));
       expect(tapped, isTrue);

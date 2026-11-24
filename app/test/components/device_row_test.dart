@@ -5,7 +5,7 @@ import 'package:tandem/components/link_line.dart';
 
 void main() {
   group('DeviceRow Widget Tests', () {
-    testWidgets('displays device name and last seen timestamp', (WidgetTester tester) async {
+    testWidgets('displays device name, last seen, and responds to tap', (WidgetTester tester) async {
       bool tapped = false;
 
       await tester.pumpWidget(
@@ -30,7 +30,7 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('shows (This device) badge when isThisDevice is true', (WidgetTester tester) async {
+    testWidgets('shows This device badge when isThisDevice is true', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -45,7 +45,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Barun Laptop (This device)'), findsOneWidget);
+      expect(find.text('Barun Laptop'), findsOneWidget);
+      expect(find.text('This device'), findsOneWidget);
     });
   });
 }

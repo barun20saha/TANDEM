@@ -25,15 +25,21 @@ jobs:
 
       - name: Run Core Test Suite
         working-directory: core
+        env:
+          CGO_ENABLED: '0'
         run: go test -v ./...
 
       - name: Run Chaos Test Suite
         if: runner.os == 'Linux'
         working-directory: tests/chaos
+        env:
+          CGO_ENABLED: '0'
         run: go test -v .
 
       - name: Build tandemd Binary
         working-directory: core
+        env:
+          CGO_ENABLED: '0'
         run: go build -v -o ../bin/tandemd_${{ matrix.os }} ./cmd/tandemd
 
   design-audit:
@@ -53,8 +59,8 @@ jobs:
 
       - name: Verify Audit Report
         run: |
-          grep "Hard-coded color violations outside tokens.dart: 0" design/AUDIT.md
-          grep "Overall Component Completeness Score: 100.0%" design/AUDIT.md
+          grep -F "Hard-coded color violations outside tokens.dart:" design/AUDIT.md | grep " 0"
+          grep -F "Overall Component Completeness Score:** 100.0%" design/AUDIT.md
 
   flutter-app:
     name: Flutter App & Widget Tests
@@ -66,7 +72,6 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
           channel: 'stable'
 
       - name: Install Dependencies

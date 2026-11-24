@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tandem/components/link_line.dart';
-import 'package:tandem/theme/tokens.dart';
 
 void main() {
   group('LinkLine Widget Tests', () {
-    testWidgets('renders direct local link with solid green styling', (WidgetTester tester) async {
+    testWidgets('renders direct local link with text label', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -19,14 +18,11 @@ void main() {
         ),
       );
 
-      final linkFinder = find.byType(LinkLine);
-      expect(linkFinder, findsOneWidget);
-
-      final semantics = tester.getSemantics(linkFinder);
-      expect(semantics.label, contains('Direct'));
+      expect(find.byType(LinkLine), findsOneWidget);
+      expect(find.text('Direct, same network'), findsOneWidget);
     });
 
-    testWidgets('renders relayed link with dashed amber styling', (WidgetTester tester) async {
+    testWidgets('renders relayed link with explanation label', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -40,11 +36,8 @@ void main() {
         ),
       );
 
-      final linkFinder = find.byType(LinkLine);
-      expect(linkFinder, findsOneWidget);
-
-      final semantics = tester.getSemantics(linkFinder);
-      expect(semantics.label, contains('Through a relay'));
+      expect(find.byType(LinkLine), findsOneWidget);
+      expect(find.text('Through a relay (slower)'), findsOneWidget);
     });
   });
 }
