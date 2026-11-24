@@ -79,6 +79,17 @@ This document records architectural decisions, `VERIFY` resolutions against upst
 
 ---
 
-## 3. Future Decision Gates Reference
-- **DECISION D1 (before Phase 4):** Full copy vs. on-demand file placeholders.
-- **DECISION D2 (before Phase 4):** Send design: ephemeral single-recipient folder over BEP vs. separate HTTPS transfer protocol.
+### DECISION D1 (Phase 4): Full Copy vs. On-Demand Placeholders
+- **Status:** DECIDED (Option 1: Full Copy with Folder Controls)
+- **Decision:** Use full copy synchronization on all devices, supported by per-device folder selection, "Send-only" and "Receive-only" folder types, and clear storage warnings (`err.disk_full`). Defer on-demand virtual placeholders to v2.
+- **Rationale:**
+  - Avoids virtual filesystem driver dependencies across Windows, macOS, Linux, and Android.
+  - Keeps storage semantics transparent to users.
+  - Eliminates silent sync stalls or unexpected data usage on metered links.
+
+### DECISION D2 (Phase 4): Send Design (One-Off Transfer)
+- **Status:** DECIDED (Option 1: Ephemeral BEP Folders)
+- **Decision:** Implement Send as an ephemeral, single-recipient folder over the standard Block Exchange Protocol (BEP) following a quick one-time pairing.
+- **Rationale:**
+  - Preserves a single wire protocol (BEP over TLS 1.3/QUIC), single crypto architecture, and single firewall profile.
+  - Avoids introducing a second unverified transfer daemon (such as plain HTTP) and prevents doubling the security attack surface.
