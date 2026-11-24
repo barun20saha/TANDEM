@@ -68,10 +68,10 @@ def generate_audit_report(violations):
     for name, rel_path in COMPONENTS:
         full_path = os.path.join(repo_root, rel_path)
         if os.path.exists(full_path):
-            lines.append(f"| **{name}** | `app/{rel_path}` | Implemented & Verified | 100% |")
+            lines.append(f"| **{name}** | `{rel_path}` | Implemented & Verified | 100% |")
             total_score += 100
         else:
-            lines.append(f"| **{name}** | `app/{rel_path}` | Missing | 0% |")
+            lines.append(f"| **{name}** | `{rel_path}` | Missing | 0% |")
 
     avg_score = total_score / len(COMPONENTS)
     lines.append(f"\n**Overall Component Completeness Score:** {avg_score:.1f}%\n")

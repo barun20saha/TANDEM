@@ -11,15 +11,15 @@
 
 | Component | Source File | Status | Score |
 |-----------|-------------|--------|-------|
-| **LinkLine** | `app/app/lib/components/link_line.dart` | Implemented & Verified | 100% |
-| **TandemButton** | `app/app/lib/components/buttons.dart` | Implemented & Verified | 100% |
-| **DeviceRow** | `app/app/lib/components/device_row.dart` | Implemented & Verified | 100% |
-| **FolderRow** | `app/app/lib/components/folder_row.dart` | Implemented & Verified | 100% |
-| **TransferRow** | `app/app/lib/components/transfer_row.dart` | Implemented & Verified | 100% |
-| **BannerNotification** | `app/app/lib/components/banner.dart` | Implemented & Verified | 100% |
-| **ConfirmDialog** | `app/app/lib/components/confirm_dialog.dart` | Implemented & Verified | 100% |
-| **EmptyState** | `app/app/lib/components/empty_state.dart` | Implemented & Verified | 100% |
-| **PairingPanel** | `app/app/lib/components/pairing_panel.dart` | Implemented & Verified | 100% |
+| **LinkLine** | `app/lib/components/link_line.dart` | Implemented & Verified | 100% |
+| **TandemButton** | `app/lib/components/buttons.dart` | Implemented & Verified | 100% |
+| **DeviceRow** | `app/lib/components/device_row.dart` | Implemented & Verified | 100% |
+| **FolderRow** | `app/lib/components/folder_row.dart` | Implemented & Verified | 100% |
+| **TransferRow** | `app/lib/components/transfer_row.dart` | Implemented & Verified | 100% |
+| **BannerNotification** | `app/lib/components/banner.dart` | Implemented & Verified | 100% |
+| **ConfirmDialog** | `app/lib/components/confirm_dialog.dart` | Implemented & Verified | 100% |
+| **EmptyState** | `app/lib/components/empty_state.dart` | Implemented & Verified | 100% |
+| **PairingPanel** | `app/lib/components/pairing_panel.dart` | Implemented & Verified | 100% |
 
 **Overall Component Completeness Score:** 100.0%
 
