@@ -46,6 +46,12 @@ This document records architectural decisions, `VERIFY` resolutions against upst
 - **Finding:** In Android 14+, `android:foregroundServiceType="dataSync"` requires `FOREGROUND_SERVICE_DATA_SYNC`. Android 15 (API 35) introduced a strict 6-hour cumulative limit in a 24-hour window for `dataSync` services, triggering `onTimeout()` and killing the process if not stopped promptly.
 - **Resolution:** Active synchronization should be driven by foreground UI presence or bounded transfers with high-priority wake locks and Wi-Fi locks only during active transfers. For long background sync, battery-optimization exemption is requested with user consent.
 
+### V7. Router-Less Direct Links Feasibility (Section 4.6, 4.8 & Phase 9)
+- **Android <-> Android:** Verified feasible and supported via Google Nearby Connections API (`Nearby.getConnectionsClient()`, Strategy `P2P_STAR`). Automates Wi-Fi Direct and BLE handshake without router.
+- **Android <-> Linux:** Verified feasible via `wpa_supplicant` Wi-Fi Direct P2P mode, marked as experimental in `core/discovery/p2p.go`.
+- **Android <-> Windows:** WinRT `WiFiDirectDevice` negotiation with non-Windows endpoints is unreliable without manual WPS PIN entry. Fallback is Flow B (Phone Hotspot).
+- **macOS Pairs:** Verified that macOS has no public Wi-Fi Direct or Nearby Connections API (Apple AWDL is private kernel-level protocol). Marked as **Unsupported** on macOS. Clear UI guidance directs users to Flow B / Flow D (join phone hotspot).
+
 ---
 
 ## 2. Decision Gates

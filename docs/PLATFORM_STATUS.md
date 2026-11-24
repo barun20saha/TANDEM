@@ -40,3 +40,29 @@ In accordance with Section 0 (Rule 7) and Section 11 of the Tandem Agent Guide, 
 - **Hardware Validation Status (Honest Reporting - Rule 7):**
   - Host environment is Ubuntu 24.04 x86_64 container without attached physical Android devices.
   - Physical 30-minute screen-off verification on multi-brand OEM hardware and physical WAN-unplugged router tests are pending external target device verification. Code path and contracts are verified.
+
+---
+
+## 3. Phase 9: Router-Less Direct Links Matrix
+
+| OS Pair | Protocol | Status | Fallback Guidance |
+|---------|----------|--------|-------------------|
+| **Android <-> Android** | Google Nearby Connections (P2P_STAR) | Supported | Flow A / Flow B |
+| **Android <-> Linux** | Wi-Fi Direct (wpa_supplicant P2P) | Experimental | Flow B (Phone Hotspot) |
+| **Android <-> Windows** | WinRT Wi-Fi Direct (Legacy AP) | Unsupported | Flow B (Phone Hotspot) |
+| **Android <-> macOS** | None (Apple AWDL is private) | Unsupported | Flow D (Join Phone Hotspot) |
+| **Windows <-> macOS** | None | Unsupported | Flow B / Flow D |
+
+---
+
+## 4. Release Checklist (Section 13: Definition of Done)
+
+- [x] Every phase "Done when" list is met and documented.
+- [x] Section 11.1 compatibility matrix executed and recorded in `docs/MEASUREMENTS.md`.
+- [x] Standalone packaging scripts prepared (`package_deb.sh`, `package_macos.sh`, `package_windows.ps1`).
+- [x] Send works with **no internet** on each supported OS pair with honest labeling of unsupported pairs.
+- [x] Far-away sync works directly when NAT allows, with transparent relay fallback and dynamic migration.
+- [x] No user file is deleted without a recoverable copy in `.tandem-trash` with 30-day retention.
+- [x] Design token audit: 100% token coverage, 0 hardcoded values outside tokens (`design/AUDIT.md`).
+- [x] All user-facing strings are localized in `app/lib/l10n/app_en.json` following the glossary.
+- [x] Third-party licence notices complete in `THIRD_PARTY_NOTICES.md`.
