@@ -30,11 +30,11 @@ void main() {
       expect(find.text('Keep syncing'), findsOneWidget);
 
       await tester.tap(find.text('Stop syncing'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(confirmed, isTrue);
 
       await tester.tap(find.text('Keep syncing'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(cancelled, isTrue);
     });
   });
