@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Download Tandem — Cross-Platform Peer-to-Peer Sync</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="description" content="One download page that detects your OS and gives you the right Tandem installer for Windows, macOS, Linux, or Android." />
   <style>
     :root {
@@ -223,10 +224,23 @@
     <header>
       <div class="brand">
         <svg viewBox="0 0 256 256" aria-hidden="true">
-          <rect width="256" height="256" rx="52" fill="#182235" stroke="#334155" stroke-width="8"/>
-          <circle cx="80" cy="128" r="28" fill="none" stroke="#4D8BFF" stroke-width="14"/>
-          <circle cx="176" cy="128" r="28" fill="none" stroke="#36D399" stroke-width="14"/>
-          <line x1="108" y1="128" x2="148" y2="128" stroke="#F8FAFC" stroke-width="14" stroke-linecap="round"/>
+          <defs>
+            <mask id="tandem-nav-gap">
+              <rect width="256" height="256" fill="#FFFFFF"/>
+              <path d="M 86 52.5 C 119 52.5 151 70 147 84" fill="none" stroke="#000000" stroke-width="35" stroke-linecap="butt" stroke-linejoin="round"/>
+            </mask>
+          </defs>
+          <rect x="4" y="4" width="248" height="248" rx="52" fill="#E8ECEF" stroke="#C5CED4" stroke-width="4"/>
+          <g fill="none" stroke-width="22" stroke-linejoin="round" stroke-linecap="butt">
+            <g mask="url(#tandem-nav-gap)" stroke="#2358D6">
+              <path d="M 127.6 203 A 25 25 0 0 0 153 178 L 153 120"/>
+              <path d="M 153 120 L 183 120 A 34 34 0 1 0 183 52 C 139 52 103 68 103 120"/>
+            </g>
+            <g stroke="#1E3A4F">
+              <path d="M 128.4 203 A 25 25 0 0 1 103 178 L 103 120"/>
+              <path d="M 103 120 L 73 120 A 34 34 0 1 1 73 52 C 117 52 153 68 153 110"/>
+            </g>
+          </g>
         </svg>
         <span>Tandem</span>
       </div>
