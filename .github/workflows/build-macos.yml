@@ -80,13 +80,25 @@ jobs:
       - name: Embedded daemon health & Info.plist Local Network check
         run: |
           DMG=$(ls dist/tandem-*-macos-universal.dmg | head -n 1)
-          mkdir -p /tmp/tandem-dmg
-          hdiutil attach "$DMG" -mountpoint /tmp/tandem-dmg -nobrowse
-          trap "hdiutil detach /tmp/tandem-dmg -force || true" EXIT
-          ls -la /tmp/tandem-dmg/Tandem.app/Contents/
-          plutil -p /tmp/tandem-dmg/Tandem.app/Contents/Info.plist | grep -F "NSLocalNetworkUsageDescription"
-          /tmp/tandem-dmg/Tandem.app/Contents/Helpers/tandemd -version
-          /tmp/tandem-dmg/Tandem.app/Contents/Helpers/syncthing --version
+          MOUNT_PT="$(hdiutil attach "$DMG" -nobrowse -readonly | awk -F'\t' '/\/Volumes\//{print $NF; exit}')"
+          if [ -z "$MOUNT_PT" ] || [ ! -d "$MOUNT_PT/Tandem.app" ]; then
+            echo "::error::Failed to mount DMG or locate Tandem.app (MOUNT_PT=$MOUNT_PT)"
+            exit 1
+          fi
+          trap "hdiutil detach \"$MOUNT_PT\" -force || true" EXIT
+          ls -la "$MOUNT_PT/Tandem.app/Contents/"
+          if ! plutil -p "$MOUNT_PT/Tandem.app/Contents/Info.plist" | grep -F "NSLocalNetworkUsageDescription"; then
+            echo "::error::NSLocalNetworkUsageDescription missing from Info.plist"
+            exit 1
+          fi
+          if ! "$MOUNT_PT/Tandem.app/Contents/Helpers/tandemd" -version; then
+            echo "::error::Embedded Helpers/tandemd -version failed"
+            exit 1
+          fi
+          if ! "$MOUNT_PT/Tandem.app/Contents/Helpers/syncthing" --version; then
+            echo "::error::Embedded Helpers/syncthing --version failed"
+            exit 1
+          fi
 
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4

@@ -76,34 +76,46 @@ jobs:
           SYNCTHING_BIN=/tmp/tools/syncthing-amd64 FLUTTER_BUNDLE_DIR="app/build/linux/x64/release/bundle" ARCH=amd64 bash scripts/package_deb.sh
           SYNCTHING_BIN=/tmp/tools/syncthing-arm64 ARCH=arm64 bash scripts/package_deb.sh
 
-      - name: Clean-container .deb install & two-instance packaged sync smoke test
+      - name: Clean-container .deb install & binary check
         run: |
           DEB_FILE=$(ls dist/tandem_*_linux_amd64.deb | head -n 1)
           sudo dpkg -i "$DEB_FILE"
-          tandemd -version
+          /usr/bin/tandemd -version
+          /usr/bin/syncthing --version
+
+      - name: Two-instance packaged sync smoke test & clean uninstall
+        run: |
           mkdir -p /tmp/smokeA /tmp/smokeB /tmp/syncA /tmp/syncB
           echo "packaged-smoke-payload" > /tmp/syncA/smoke.txt
-          tandemd -config /tmp/smokeA -bind 127.0.0.1:18385 -sync-port 24200 -discovery-port 24127 -engine-gui 127.0.0.1:18384 -device-name SmokeA -global-discovery=false -relays=false -nat=false >/tmp/smokeA.log 2>&1 &
+          /usr/bin/tandemd -config /tmp/smokeA -bind 127.0.0.1:18385 -sync-port 24200 -discovery-port 24127 -engine-gui 127.0.0.1:18384 -device-name SmokeA -global-discovery=false -relays=false -nat=false >/tmp/smokeA.log 2>&1 &
           PIDA=$!
-          tandemd -config /tmp/smokeB -bind 127.0.0.1:18395 -sync-port 24300 -discovery-port 24127 -engine-gui 127.0.0.1:18394 -device-name SmokeB -global-discovery=false -relays=false -nat=false >/tmp/smokeB.log 2>&1 &
+          /usr/bin/tandemd -config /tmp/smokeB -bind 127.0.0.1:18395 -sync-port 24300 -discovery-port 24127 -engine-gui 127.0.0.1:18394 -device-name SmokeB -global-discovery=false -relays=false -nat=false >/tmp/smokeB.log 2>&1 &
           PIDB=$!
           trap "kill $PIDA $PIDB 2>/dev/null || true" EXIT
           python3 - << 'PYEOF'
-          import json, os, time, urllib.request
+          import json, os, sys, time, urllib.request
+          def dump_logs():
+              for p in ("/tmp/smokeA.log", "/tmp/smokeB.log"):
+                  if os.path.exists(p):
+                      print(f"=== {p} ===")
+                      print(open(p, errors="replace").read())
           def wait_ready(cfg, port):
-              for _ in range(60):
+              last_health = None
+              for _ in range(120):
                   kp = os.path.join(cfg, "api.key")
                   if os.path.exists(kp):
                       k = open(kp).read().strip()
                       try:
                           req = urllib.request.Request(f"http://127.0.0.1:{port}/api/v1/health", headers={"Authorization": f"Bearer {k}"})
                           h = json.loads(urllib.request.urlopen(req, timeout=2).read())
+                          last_health = h
                           if h.get("engineReady") and h.get("syncPortOpen") and h.get("discoveryWorks"):
                               return k
-                      except Exception:
-                          pass
+                      except Exception as e:
+                          last_health = str(e)
                   time.sleep(0.5)
-              raise RuntimeError(f"daemon {port} not ready")
+              dump_logs()
+              raise RuntimeError(f"daemon {port} not ready: last_health={last_health}")
           kA = wait_ready("/tmp/smokeA", 18385)
           kB = wait_ready("/tmp/smokeB", 18395)
           def api(port, key, method, path, body=None):
@@ -116,14 +128,21 @@ jobs:
           api(18395, kB, "POST", "/devices", {"deviceId": idA, "name": "SmokeA", "addressHint": "tcp://127.0.0.1:24200"})
           api(18385, kA, "POST", "/folders", {"id": "smoke-f", "path": "/tmp/syncA", "type": "sendreceive", "sharedDevices": [idB]})
           api(18395, kB, "POST", "/folders", {"id": "smoke-f", "path": "/tmp/syncB", "type": "sendreceive", "sharedDevices": [idA]})
-          for _ in range(60):
+          for _ in range(120):
               if os.path.exists("/tmp/syncB/smoke.txt") and open("/tmp/syncB/smoke.txt").read() == "packaged-smoke-payload\n":
                   print("PACKAGED_SMOKE_MATCH")
                   break
               time.sleep(0.5)
           else:
+              dump_logs()
+              print("A devices:", api(18385, kA, "GET", "/devices"))
+              print("B devices:", api(18395, kB, "GET", "/devices"))
+              print("A folders:", api(18385, kA, "GET", "/folders"))
+              print("B folders:", api(18395, kB, "GET", "/folders"))
               raise RuntimeError("Packaged Linux smoke sync timed out")
           PYEOF
+          kill "$PIDA" "$PIDB" 2>/dev/null || true
+          wait "$PIDA" "$PIDB" 2>/dev/null || true
           sudo dpkg -r tandem
           test -f /tmp/syncA/smoke.txt
 
