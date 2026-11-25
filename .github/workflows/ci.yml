@@ -96,7 +96,14 @@ jobs:
 
       - name: Run Flutter Analyze
         working-directory: app
-        run: flutter analyze --no-fatal-infos
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos 2>&1 | tee /tmp/flutter_analyze.log || {
+            tail -n 60 /tmp/flutter_analyze.log | while IFS= read -r l; do
+              echo "::error::$l"
+            done
+            exit 1
+          }
 
       - name: Run Flutter Widget Tests
         working-directory: app

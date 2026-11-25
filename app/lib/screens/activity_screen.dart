@@ -63,10 +63,11 @@ class ActivityScreen extends StatelessWidget {
             ),
             child: TransferRow(
               fileName: item['fileName'] as String,
+              state: TransferState.done,
               progress: item['progress'] as double,
               speedText: item['speedText'] as String,
               timeLeftText: item['timeLeftText'] as String,
-              interface: item['interface'] as String,
+              interfaceUsed: item['interface'] as String,
             ),
           );
         },

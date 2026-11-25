@@ -68,9 +68,8 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
         padding: const EdgeInsets.all(TandemTokens.space_4),
         children: [
           const BannerNotification(
-            title: '4 of 5 checks passed',
-            body: 'Tandem is operating normally. One optimization recommendation is available.',
-            severity: BannerSeverity.info,
+            message: '4 of 5 checks passed — Tandem is operating normally. One optimization recommendation is available.',
+            variant: BannerVariant.info,
           ),
           const SizedBox(height: TandemTokens.space_4),
           ..._checks.map((check) {

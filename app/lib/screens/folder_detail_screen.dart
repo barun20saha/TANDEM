@@ -84,9 +84,8 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
         children: [
           if (widget.conflictCount > 0) ...[
             BannerNotification(
-              title: '${widget.conflictCount} file conflicts found',
-              body: 'Different edits were made to files at the same time. Both copies have been preserved safely.',
-              severity: BannerSeverity.warning,
+              message: '${widget.conflictCount} file conflicts found. Different edits were made to files at the same time; both copies have been preserved safely.',
+              variant: BannerVariant.warning,
               actionLabel: 'Review conflicts',
               onAction: () {},
             ),

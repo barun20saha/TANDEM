@@ -81,7 +81,7 @@ else
     <key>CFBundleName</key>
     <string>Tandem</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.2.2</string>
+    <string>0.2.3</string>
     <key>CFBundleVersion</key>
     <string>${VERSION}</string>
     <key>LSUIElement</key>

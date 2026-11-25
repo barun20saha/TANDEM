@@ -1,7 +1,7 @@
 name: tandem
 description: High-performance peer-to-peer file synchronization and transfer.
 publish_to: 'none'
-version: 0.2.2+202
+version: 0.2.3+203
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

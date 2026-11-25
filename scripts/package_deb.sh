@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEFAULT_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
-VERSION="${VERSION:-0.2.2}"
+VERSION="${VERSION:-0.2.3}"
 CORE_VERSION="${VERSION%%-*}"
 ARCH="${ARCH:-amd64}"
 CHANNEL="${CHANNEL:-stable}"
@@ -120,8 +120,8 @@ if command -v dpkg-deb >/dev/null 2>&1; then
     echo "Created ${DEB_PATH}"
 fi
 
-# 2. RPM (.rpm) package (when rpmbuild is installed)
-if command -v rpmbuild >/dev/null 2>&1; then
+# 2. RPM (.rpm) package (native arch when rpmbuild is installed)
+if command -v rpmbuild >/dev/null 2>&1 && [[ "${RPM_ARCH}" == "$(uname -m)" ]]; then
     mkdir -p "${RPM_ROOT}"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
     RPM_PAYLOAD="${RPM_ROOT}/SOURCES/tandem-${CORE_VERSION}"
     mkdir -p "${RPM_PAYLOAD}"
@@ -186,25 +186,28 @@ if [[ -n "${APPIMAGETOOL}" && "${ARCH}" == "amd64" ]]; then
     if [[ "${HAS_UI}" == "true" ]]; then
         mkdir -p "${APPDIR}/opt/tandem"
         cp -a "${FLUTTER_BUNDLE_DIR}/." "${APPDIR}/opt/tandem/"
+        ln -sf ../../opt/tandem/tandem "${APPDIR}/usr/bin/tandem"
         cat << 'EOF' > "${APPDIR}/AppRun"
 #!/usr/bin/env bash
 HERE="$(dirname "$(readlink -f "$0")")"
 export PATH="${HERE}/usr/bin:${PATH}"
 exec "${HERE}/opt/tandem/tandem" "$@"
 EOF
+        EXEC_NAME="tandem"
     else
         cat << 'EOF' > "${APPDIR}/AppRun"
 #!/usr/bin/env bash
 HERE="$(dirname "$(readlink -f "$0")")"
 exec "${HERE}/usr/bin/tandemd" "$@"
 EOF
+        EXEC_NAME="tandemd"
     fi
     chmod 755 "${APPDIR}/AppRun"
-    cat << 'EOF' > "${APPDIR}/tandem.desktop"
+    cat << EOF > "${APPDIR}/tandem.desktop"
 [Desktop Entry]
 Name=Tandem
 Comment=Peer-to-peer file transfer and continuous folder sync
-Exec=tandem
+Exec=${EXEC_NAME}
 Icon=tandem
 Type=Application
 Categories=Utility;Network;FileTransfer;

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-25
+
+### Fixed
+- Fixed Dart constructor errors in `app/lib/screens/activity_screen.dart` (`TransferRow`), `app/lib/screens/health_check_screen.dart` (`BannerNotification`), and `app/lib/screens/folder_detail_screen.dart` (`BannerNotification`) so `flutter analyze` passes cleanly.
+- Guarded RPM packaging in `scripts/package_deb.sh` to native host architecture (`x86_64` on `amd64`) and fixed `AppDir/usr/bin/tandem` symlink for AppImage validation.
+
 ## [0.2.2] - 2026-11-25
 
 ### Fixed
@@ -53,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flutter UI screens (`S1`–`S11`) and design system token compiler/auditor (`design/audit.py` at 100% token coverage).
 - Chaos test suite (`tests/chaos`) and self-hosted relay/discovery Docker Compose stack (`infra/`).
 
-[Unreleased]: https://github.com/barun20saha/TANDEM/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/barun20saha/TANDEM/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/barun20saha/TANDEM/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/barun20saha/TANDEM/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/barun20saha/TANDEM/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/barun20saha/TANDEM/compare/v0.1.0-alpha.1...v0.2.0
