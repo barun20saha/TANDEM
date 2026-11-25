@@ -1,0 +1,231 @@
+=== Toolchain (Go) ===
+go version go1.27.4 linux/amd64
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+
+=== core: go vet ./... ===
+
+=== core: go build ./... ===
+
+=== core: go test -race -count=1 ./... ===
+=== RUN   TestLocalAPIEndpoints
+=== RUN   TestLocalAPIEndpoints/AuthRequired
+=== RUN   TestLocalAPIEndpoints/GetStatus
+=== RUN   TestLocalAPIEndpoints/GetHealth
+=== RUN   TestLocalAPIEndpoints/DevicesCRUD
+=== RUN   TestLocalAPIEndpoints/FoldersCRUD
+=== RUN   TestLocalAPIEndpoints/PairingFlow
+=== RUN   TestLocalAPIEndpoints/SendSession
+--- PASS: TestLocalAPIEndpoints (0.11s)
+    --- PASS: TestLocalAPIEndpoints/AuthRequired (0.00s)
+    --- PASS: TestLocalAPIEndpoints/GetStatus (0.00s)
+    --- PASS: TestLocalAPIEndpoints/GetHealth (0.05s)
+    --- PASS: TestLocalAPIEndpoints/DevicesCRUD (0.00s)
+    --- PASS: TestLocalAPIEndpoints/FoldersCRUD (0.00s)
+    --- PASS: TestLocalAPIEndpoints/PairingFlow (0.00s)
+    --- PASS: TestLocalAPIEndpoints/SendSession (0.00s)
+PASS
+ok  	tandem/core/api	1.128s
+?   	tandem/core/cmd/tandemd	[no test files]
+?   	tandem/core/cmd/tandemd_android	[no test files]
+=== RUN   TestPerInterfaceBroadcastCalculation
+--- PASS: TestPerInterfaceBroadcastCalculation (0.00s)
+=== RUN   TestDiscoveryAnnouncementPacket
+--- PASS: TestDiscoveryAnnouncementPacket (0.00s)
+=== RUN   TestDiscoverySelfTest
+    discovery_test.go:74: Discovery self-test result: Passed=true, Notes=Local UDP discovery socket is operational
+--- PASS: TestDiscoverySelfTest (0.00s)
+=== RUN   TestFlowEDetection
+--- PASS: TestFlowEDetection (0.00s)
+=== RUN   TestRouterlessP2PCapabilities
+--- PASS: TestRouterlessP2PCapabilities (0.00s)
+PASS
+ok  	tandem/core/discovery	1.015s
+?   	tandem/core/engine	[no test files]
+=== RUN   TestWindowsReservedNames
+--- PASS: TestWindowsReservedNames (0.00s)
+=== RUN   TestWindowsInvalidCharsAndTrailing
+--- PASS: TestWindowsInvalidCharsAndTrailing (0.00s)
+=== RUN   TestShouldIgnoreOSJunk
+--- PASS: TestShouldIgnoreOSJunk (0.00s)
+=== RUN   TestDetectCaseCollisions
+--- PASS: TestDetectCaseCollisions (0.00s)
+=== RUN   TestAtomicWriteTempAndHashVerification
+--- PASS: TestAtomicWriteTempAndHashVerification (0.00s)
+=== RUN   TestSafePathEscapePrevention
+--- PASS: TestSafePathEscapePrevention (0.00s)
+PASS
+ok  	tandem/core/engine/compat	1.019s
+=== RUN   TestFolderManagement
+--- PASS: TestFolderManagement (0.00s)
+PASS
+ok  	tandem/core/folders	1.018s
+=== RUN   TestRelayedToDirectMigration
+--- PASS: TestRelayedToDirectMigration (0.00s)
+PASS
+ok  	tandem/core/linkmanager	1.019s
+=== RUN   TestMultipathBlockSchedulingAndFailover
+--- PASS: TestMultipathBlockSchedulingAndFailover (0.00s)
+PASS
+ok  	tandem/core/multipath	1.018s
+?   	tandem/core/pairing	[no test files]
+=== RUN   TestAllAdaptersAgainstContract
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Network/Interfaces
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Network/WatchContextCancellation
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Firewall/StatusAndRemediation
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Hotspot/CapabilityContract
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Storage/Capabilities
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Lifecycle/HoldAwake
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Autostart/EnabledContract
+=== RUN   TestAllAdaptersAgainstContract/LinuxAdapterContract/Notifier/NotifyContract
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Network/Interfaces
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Network/WatchContextCancellation
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Firewall/StatusAndRemediation
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Hotspot/CapabilityContract
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Storage/Capabilities
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Lifecycle/HoldAwake
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Autostart/EnabledContract
+=== RUN   TestAllAdaptersAgainstContract/WindowsAdapterContract/Notifier/NotifyContract
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Network/Interfaces
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Network/WatchContextCancellation
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Firewall/StatusAndRemediation
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Hotspot/CapabilityContract
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Storage/Capabilities
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Lifecycle/HoldAwake
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Autostart/EnabledContract
+=== RUN   TestAllAdaptersAgainstContract/DarwinAdapterContract/Notifier/NotifyContract
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Network/Interfaces
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Network/WatchContextCancellation
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Firewall/StatusAndRemediation
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Hotspot/CapabilityContract
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Storage/Capabilities
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Lifecycle/HoldAwake
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Autostart/EnabledContract
+=== RUN   TestAllAdaptersAgainstContract/AndroidAdapterContract/Notifier/NotifyContract
+--- PASS: TestAllAdaptersAgainstContract (0.05s)
+    --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract (0.05s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Network/Interfaces (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Network/WatchContextCancellation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Firewall/StatusAndRemediation (0.04s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Hotspot/CapabilityContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Storage/Capabilities (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Lifecycle/HoldAwake (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Autostart/EnabledContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/LinuxAdapterContract/Notifier/NotifyContract (0.01s)
+    --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Network/Interfaces (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Network/WatchContextCancellation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Firewall/StatusAndRemediation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Hotspot/CapabilityContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Storage/Capabilities (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Lifecycle/HoldAwake (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Autostart/EnabledContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/WindowsAdapterContract/Notifier/NotifyContract (0.00s)
+    --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Network/Interfaces (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Network/WatchContextCancellation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Firewall/StatusAndRemediation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Hotspot/CapabilityContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Storage/Capabilities (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Lifecycle/HoldAwake (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Autostart/EnabledContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/DarwinAdapterContract/Notifier/NotifyContract (0.00s)
+    --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Network/Interfaces (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Network/WatchContextCancellation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Firewall/StatusAndRemediation (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Hotspot/CapabilityContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Storage/Capabilities (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Lifecycle/HoldAwake (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Autostart/EnabledContract (0.00s)
+        --- PASS: TestAllAdaptersAgainstContract/AndroidAdapterContract/Notifier/NotifyContract (0.00s)
+PASS
+ok  	tandem/core/pal	1.073s
+=== RUN   TestAndroidBridgeLifecycle
+2026/11/25 12:32:48 [Android PAL] Tandem engine starting with config path: /tmp/test-android-config
+2026/11/25 12:32:48 [Android PAL] Tandem engine stopping...
+--- PASS: TestAndroidBridgeLifecycle (0.00s)
+PASS
+ok  	tandem/core/pal_android	1.015s
+?   	tandem/core/pal_darwin	[no test files]
+=== RUN   TestLinuxPALContract
+=== RUN   TestLinuxPALContract/ContractSuite
+    adapter_test.go:30: Found 1 network interfaces
+    adapter_test.go:33: Hotspot capability: CanCreate=false, CanJoin=true, Notes=No Wi-Fi interface supporting AP mode detected; join an existing hotspot instead
+    adapter_test.go:48: Firewall status: open (err=<nil>)
+=== RUN   TestLinuxPALContract/FirewallRemediationText
+=== RUN   TestLinuxPALContract/AutostartServiceFile
+--- PASS: TestLinuxPALContract (0.08s)
+    --- PASS: TestLinuxPALContract/ContractSuite (0.05s)
+    --- PASS: TestLinuxPALContract/FirewallRemediationText (0.00s)
+    --- PASS: TestLinuxPALContract/AutostartServiceFile (0.03s)
+PASS
+ok  	tandem/core/pal_linux	1.102s
+?   	tandem/core/pal_windows	[no test files]
+=== RUN   TestSendSessionLifecycle
+--- PASS: TestSendSessionLifecycle (0.00s)
+PASS
+ok  	tandem/core/send	1.016s
+=== RUN   TestTrashMoveAndRestore
+--- PASS: TestTrashMoveAndRestore (0.01s)
+=== RUN   TestTrashPurgeExpired
+--- PASS: TestTrashPurgeExpired (0.01s)
+PASS
+ok  	tandem/core/trash	1.029s
+
+=== tests: go vet ./... ===
+
+=== tests: go test -race -count=1 ./... ===
+=== RUN   TestChaosNetworkDropMidTransfer
+--- PASS: TestChaosNetworkDropMidTransfer (0.00s)
+=== RUN   TestChaosDiskFullAtomicSafety
+--- PASS: TestChaosDiskFullAtomicSafety (0.00s)
+=== RUN   TestChaosDeletionRecoveryFromTrash
+--- PASS: TestChaosDeletionRecoveryFromTrash (0.00s)
+=== RUN   TestChaosSleepAndResumeRecovery
+--- PASS: TestChaosSleepAndResumeRecovery (0.00s)
+PASS
+ok  	tandem/tests/chaos	1.012s
+
+=== Toolchain (Flutter & Android SDK) ===
+Flutter 3.50.1 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision ae9b586f34 (6 days ago) • 2026-11-18 17:01:07 -0800
+Engine • hash 51379e6df48ea8ee7205623b90fe66491cad8df3 (revision 4d35714800) (7 days ago) • 2026-11-18 01:50:07.000Z
+Tools • Dart 3.14.0 • DevTools 2.61.0
+Android Debug Bridge version 1.0.41
+Version 37.0.3-16887417
+Installed as /tmp/tools/android-sdk/platform-tools/adb
+Running on Linux 7.0.0-42-generic (x86_64)
+apksigner: 0.9
+Android Asset Packaging Tool (aapt) 2.19-11948202
+aapt2: 
+
+=== app: flutter analyze --no-fatal-infos ===
+Analyzing app...                                                
+
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/components/folder_row.dart:97:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/screens/folder_detail_screen.dart:123:21 • prefer_const_constructors
+   info • Unnecessary use of 'toList' in a spread. Try removing the invocation of 'toList' • lib/screens/health_check_screen.dart:129:14 • unnecessary_to_list_in_spreads
+   info • Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation • lib/screens/no_internet_helper_screen.dart:92:27 • prefer_const_constructors
+
+4 issues found. (ran in 5.6s)
+
+=== app: flutter test --reporter expanded ===
+00:00 +0: loading /home/barun/Desktop/TANDEM/app/test/components/link_line_test.dart
+00:00 +0: /home/barun/Desktop/TANDEM/app/test/components/link_line_test.dart: LinkLine Widget Tests renders direct local link with text label
+00:00 +1: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:00 +2: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:01 +3: /home/barun/Desktop/TANDEM/app/test/components/folder_row_test.dart: FolderRow Widget Tests renders label, path, size, and responds to tap
+00:01 +4: /home/barun/Desktop/TANDEM/app/test/components/device_row_test.dart: DeviceRow Widget Tests displays device name, last seen, and responds to tap
+00:02 +5: /home/barun/Desktop/TANDEM/app/test/components/device_row_test.dart: DeviceRow Widget Tests shows This device badge when isThisDevice is true
+00:02 +6: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies primary direct link color
+00:02 +7: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies relay link color
+00:02 +8: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies spacing scale is strict 4pt base grid
+00:02 +9: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies radius tokens
+00:02 +10: All tests passed!
+
+=== design: python3 design/audit.py ===
+Audit completed: /home/barun/Desktop/TANDEM/design/AUDIT.md

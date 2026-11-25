@@ -1,0 +1,189 @@
+============================================================
+INSPECTING: /tmp/tandem-0.2.3-android-sideload.apk
+============================================================
+--- apksigner verify --verbose --print-certs ---
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+Signer #1 certificate SHA-256 digest: 840974dcbc446c567f512626d461aa151c2520e111cb8e67ee7c07e0e27a53c9
+Signer #1 certificate SHA-1 digest: c7585033a5c62cd429a76779a16ab7ff85d8342a
+Signer #1 certificate MD5 digest: b3ce8bb40a11f11c97b57948ba218a0f
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048
+Signer #1 public key SHA-256 digest: fa61a46fc43fcc49938d66123f90f1c6070df83f6e4ea33964a664acd203c935
+Signer #1 public key SHA-1 digest: bf6a1628063412f8ff42785fe365abfc96c9d12b
+Signer #1 public key MD5 digest: cc6f10f6aa1402552fd89de2d8c38ae2
+--- aapt2 dump badging (first 40 lines) ---
+package: name='com.tandem.sync' versionCode='203' versionName='0.2.3' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+minSdkVersion:'24'
+targetSdkVersion:'36'
+uses-permission: name='android.permission.INTERNET'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.CHANGE_NETWORK_STATE'
+uses-permission: name='android.permission.ACCESS_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_MULTICAST_STATE'
+uses-permission: name='android.permission.NEARBY_WIFI_DEVICES' usesPermissionFlags='neverForLocation'
+uses-permission: name='android.permission.ACCESS_FINE_LOCATION' maxSdkVersion='32'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE_DATA_SYNC'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'
+uses-permission: name='android.permission.MANAGE_EXTERNAL_STORAGE'
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE' maxSdkVersion='32'
+uses-permission: name='android.permission.WRITE_EXTERNAL_STORAGE' maxSdkVersion='29'
+uses-permission: name='android.permission.READ_MEDIA_IMAGES'
+uses-permission: name='android.permission.READ_MEDIA_VIDEO'
+uses-permission: name='com.tandem.sync.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+application-label:'Tandem'
+application-icon-160:'res/9w.png'
+application-icon-240:'res/yn.png'
+application-icon-320:'res/FS.png'
+application-icon-480:'res/RJ.png'
+application-icon-640:'res/o-.png'
+application: label='Tandem' icon='res/9w.png'
+launchable-activity: name='io.flutter.embedding.android.FlutterActivity'  label='' icon=''
+uses-library-not-required:'androidx.window.extensions'
+uses-library-not-required:'androidx.window.sidecar'
+feature-group: label=''
+  uses-feature: name='android.hardware.faketouch'
+  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'
+  uses-feature: name='android.hardware.location'
+  uses-implied-feature: name='android.hardware.location' reason='requested android.permission.ACCESS_FINE_LOCATION permission'
+  uses-feature: name='android.hardware.wifi'
+  uses-implied-feature: name='android.hardware.wifi' reason='requested android.permission.ACCESS_WIFI_STATE permission, requested android.permission.CHANGE_WIFI_MULTICAST_STATE permission, and requested android.permission.CHANGE_WIFI_STATE permission'
+main
+--- aapt2 dump permissions ---
+package: com.tandem.sync
+uses-permission: name='android.permission.INTERNET'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.CHANGE_NETWORK_STATE'
+uses-permission: name='android.permission.ACCESS_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_MULTICAST_STATE'
+uses-permission: name='android.permission.NEARBY_WIFI_DEVICES' usesPermissionFlags='neverForLocation'
+uses-permission: name='android.permission.ACCESS_FINE_LOCATION' maxSdkVersion='32'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE_DATA_SYNC'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'
+uses-permission: name='android.permission.MANAGE_EXTERNAL_STORAGE'
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE' maxSdkVersion='32'
+uses-permission: name='android.permission.WRITE_EXTERNAL_STORAGE' maxSdkVersion='29'
+uses-permission: name='android.permission.READ_MEDIA_IMAGES'
+uses-permission: name='android.permission.READ_MEDIA_VIDEO'
+permission: com.tandem.sync.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+uses-permission: name='com.tandem.sync.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+--- native libraries (.so) ---
+  3605464  1981-01-01 01:01   lib/arm64-v8a/libapp.so
+ 11346352  1981-01-01 01:01   lib/arm64-v8a/libflutter.so
+  1754064  1981-01-01 01:01   lib/arm64-v8a/libtandemd.so
+  4014664  1981-01-01 01:01   lib/armeabi-v7a/libapp.so
+  8458404  1981-01-01 01:01   lib/armeabi-v7a/libflutter.so
+  1633228  1981-01-01 01:01   lib/armeabi-v7a/libtandemd.so
+  3736536  1981-01-01 01:01   lib/x86_64/libapp.so
+ 12467088  1981-01-01 01:01   lib/x86_64/libflutter.so
+  1782416  1981-01-01 01:01   lib/x86_64/libtandemd.so
+     3218  1981-01-01 01:01   assets/flutter_assets/lib/l10n/app_en.json
+============================================================
+INSPECTING: /tmp/tandem-0.2.3-android-play.apk
+============================================================
+--- apksigner verify --verbose --print-certs ---
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+Signer #1 certificate SHA-256 digest: 9c319e3efe4383ae1a920a468a4e596a4833ab4a3fc5344e49d8f831ef4d202c
+Signer #1 certificate SHA-1 digest: e152e53ca3be0f8e33608d91e18a62d90b4787d9
+Signer #1 certificate MD5 digest: 79ffa862ec73383a743857d5e380b02f
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048
+Signer #1 public key SHA-256 digest: 1601b5d19541c042b74eaf69892ecf40baad2e423c3c12492e39b96a42e3c6df
+Signer #1 public key SHA-1 digest: 352bdddc56947caa4e73c20a0e6d60d85abe5a6f
+Signer #1 public key MD5 digest: b9962fc8b35356eecc4283318546d4b3
+--- aapt2 dump badging (first 40 lines) ---
+package: name='com.tandem.sync.play' versionCode='203' versionName='0.2.3' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+minSdkVersion:'24'
+targetSdkVersion:'36'
+uses-permission: name='android.permission.INTERNET'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.CHANGE_NETWORK_STATE'
+uses-permission: name='android.permission.ACCESS_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_MULTICAST_STATE'
+uses-permission: name='android.permission.NEARBY_WIFI_DEVICES' usesPermissionFlags='neverForLocation'
+uses-permission: name='android.permission.ACCESS_FINE_LOCATION' maxSdkVersion='32'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE_DATA_SYNC'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE' maxSdkVersion='32'
+uses-permission: name='android.permission.WRITE_EXTERNAL_STORAGE' maxSdkVersion='29'
+uses-permission: name='android.permission.READ_MEDIA_IMAGES'
+uses-permission: name='android.permission.READ_MEDIA_VIDEO'
+uses-permission: name='com.tandem.sync.play.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+application-label:'Tandem'
+application-icon-160:'res/9w.png'
+application-icon-240:'res/yn.png'
+application-icon-320:'res/FS.png'
+application-icon-480:'res/RJ.png'
+application-icon-640:'res/o-.png'
+application: label='Tandem' icon='res/9w.png'
+launchable-activity: name='io.flutter.embedding.android.FlutterActivity'  label='' icon=''
+uses-library-not-required:'androidx.window.extensions'
+uses-library-not-required:'androidx.window.sidecar'
+feature-group: label=''
+  uses-feature: name='android.hardware.faketouch'
+  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'
+  uses-feature: name='android.hardware.location'
+  uses-implied-feature: name='android.hardware.location' reason='requested android.permission.ACCESS_FINE_LOCATION permission'
+  uses-feature: name='android.hardware.wifi'
+  uses-implied-feature: name='android.hardware.wifi' reason='requested android.permission.ACCESS_WIFI_STATE permission, requested android.permission.CHANGE_WIFI_MULTICAST_STATE permission, and requested android.permission.CHANGE_WIFI_STATE permission'
+main
+other-receivers
+--- aapt2 dump permissions ---
+package: com.tandem.sync.play
+uses-permission: name='android.permission.INTERNET'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.CHANGE_NETWORK_STATE'
+uses-permission: name='android.permission.ACCESS_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_MULTICAST_STATE'
+uses-permission: name='android.permission.NEARBY_WIFI_DEVICES' usesPermissionFlags='neverForLocation'
+uses-permission: name='android.permission.ACCESS_FINE_LOCATION' maxSdkVersion='32'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE_DATA_SYNC'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'
+uses-permission: name='android.permission.READ_EXTERNAL_STORAGE' maxSdkVersion='32'
+uses-permission: name='android.permission.WRITE_EXTERNAL_STORAGE' maxSdkVersion='29'
+uses-permission: name='android.permission.READ_MEDIA_IMAGES'
+uses-permission: name='android.permission.READ_MEDIA_VIDEO'
+permission: com.tandem.sync.play.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+uses-permission: name='com.tandem.sync.play.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+--- native libraries (.so) ---
+  3605464  1981-01-01 01:01   lib/arm64-v8a/libapp.so
+ 11346352  1981-01-01 01:01   lib/arm64-v8a/libflutter.so
+  1754064  1981-01-01 01:01   lib/arm64-v8a/libtandemd.so
+  4014664  1981-01-01 01:01   lib/armeabi-v7a/libapp.so
+  8458404  1981-01-01 01:01   lib/armeabi-v7a/libflutter.so
+  1633228  1981-01-01 01:01   lib/armeabi-v7a/libtandemd.so
+  3736536  1981-01-01 01:01   lib/x86_64/libapp.so
+ 12467088  1981-01-01 01:01   lib/x86_64/libflutter.so
+  1782416  1981-01-01 01:01   lib/x86_64/libtandemd.so
+     3218  1981-01-01 01:01   assets/flutter_assets/lib/l10n/app_en.json

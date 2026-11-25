@@ -1,0 +1,57 @@
+=== Daemon Version ===
+tandemd 0.1.0-alpha (linux/amd64)
+
+=== Starting tandemd -config /tmp/ws0-cfgA ===
+--- Files created in /tmp/ws0-cfgA ---
+total 12
+drwxrwxrwx  2 barun  barun   4096 Nov 25 12:33 .
+drwxrwxrwt 23 nobody nogroup 4096 Nov 25 12:33 ..
+-rw-------  1 barun  barun     32 Nov 25 12:33 api.key
+--- Listening sockets (ss -lntup) ---
+Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+tcp   LISTEN 0      4096       127.0.0.1:8385      0.0.0.0:*    users:(("tandemd",pid=29,fd=5))
+--- GET /api/v1/status (no auth) ---
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+Date: Wed, 25 Nov 2026 07:03:21 GMT
+Content-Length: 63
+
+{"code":"unauthorized","message":"Invalid or missing API key"}
+
+--- GET /api/v1/status (with Bearer token) ---
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Wed, 25 Nov 2026 07:03:21 GMT
+Content-Length: 137
+
+{"activeTransfers":0,"hasInternet":false,"myDeviceId":"TANDEM-LOCAL-ID","myDeviceName":"sandbox","state":"idle","version":"0.1.0-alpha"}
+
+--- GET /api/v1/health (with Bearer token) ---
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Wed, 25 Nov 2026 07:03:21 GMT
+Content-Length: 234
+
+{"batteryOptimized":false,"discoveryWorks":true,"firewallRemediation":"Your Linux firewall may block incoming peer connections. Allow Tandem sync and discovery ports.","firewallState":"open","inotifyExhausted":false,"storageOk":true}
+
+--- GET /api/v1/devices (with Bearer token) ---
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Wed, 25 Nov 2026 07:03:21 GMT
+Content-Length: 3
+
+[]
+
+--- GET /api/v1/folders (with Bearer token) ---
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Wed, 25 Nov 2026 07:03:21 GMT
+Content-Length: 3
+
+[]
+
+--- Daemon log ---
+2026/11/25 12:33:19 starting tandemd 0.1.0-alpha on 127.0.0.1:8385...
+2026/11/25 12:33:19 Tandem API Key written to: /tmp/ws0-cfgA/api.key
+2026/11/25 12:33:21 received signal terminated, shutting down...
+2026/11/25 12:33:21 server stopped with error: http: Server closed

@@ -11,6 +11,7 @@ bin/
 .tandem-tmp/
 *.tmp
 *.log
+!docs/evidence/**/*.log
 
 # OS metadata
 .DS_Store
