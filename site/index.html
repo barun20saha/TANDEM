@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Download Tandem — Cross-Platform Peer-to-Peer Sync</title>
+  <meta name="description" content="One download page that detects your OS and gives you the right Tandem installer for Windows, macOS, Linux, or Android." />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #182235;
+      --surface-2: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #36d399;
+      --warn-bg: rgba(245, 158, 11, 0.12);
+      --warn-border: rgba(245, 158, 11, 0.35);
+      --warn-text: #fcd34d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    .brand svg { width: 36px; height: 36px; }
+    .nav-links { display: flex; gap: 18px; align-items: center; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .hero {
+      background: linear-gradient(135deg, var(--surface) 0%, #131d31 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.16);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+      line-height: 1.2;
+    }
+    .lead {
+      color: var(--muted);
+      max-width: 680px;
+      margin: 0 0 24px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 14px 22px;
+      border-radius: 10px;
+      transition: background 0.15s ease;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 13px 18px;
+      border-radius: 10px;
+    }
+    .btn-secondary:hover { border-color: #64748b; }
+    .version-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    select {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.9rem;
+    }
+    .notice {
+      margin-top: 18px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: var(--warn-text);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+    }
+    h2 {
+      margin: 36px 0 16px;
+      font-size: 1.35rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
+    }
+    .card h3 { margin: 0 0 6px; font-size: 1.1rem; }
+    .card .sub { color: var(--muted); font-size: 0.86rem; margin-bottom: 14px; }
+    .asset-list { list-style: none; padding: 0; margin: 0 0 14px; }
+    .asset-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid rgba(51, 65, 85, 0.65);
+      gap: 8px;
+      font-size: 0.88rem;
+    }
+    .asset-list a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-weight: 500;
+      word-break: break-all;
+    }
+    .asset-list a:hover { text-decoration: underline; }
+    .size { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+    .note-box {
+      color: var(--muted);
+      font-size: 0.82rem;
+      border-top: 1px solid rgba(51, 65, 85, 0.65);
+      padding-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    th { background: var(--surface-2); color: #cbd5e1; }
+    tr:last-child td { border-bottom: none; }
+    footer {
+      margin-top: 48px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    footer a { color: #93c5fd; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <svg viewBox="0 0 256 256" aria-hidden="true">
+          <rect width="256" height="256" rx="52" fill="#182235" stroke="#334155" stroke-width="8"/>
+          <circle cx="80" cy="128" r="28" fill="none" stroke="#4D8BFF" stroke-width="14"/>
+          <circle cx="176" cy="128" r="28" fill="none" stroke="#36D399" stroke-width="14"/>
+          <line x1="108" y1="128" x2="148" y2="128" stroke="#F8FAFC" stroke-width="14" stroke-linecap="round"/>
+        </svg>
+        <span>Tandem</span>
+      </div>
+      <nav class="nav-links">
+        <a href="https://github.com/barun20saha/TANDEM">Source Code</a>
+        <a href="https://github.com/barun20saha/TANDEM/releases">All Releases</a>
+        <a href="https://github.com/barun20saha/TANDEM/blob/main/SECURITY.md">Security</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="badge" id="detected-badge">Detecting your platform...</div>
+      <h1>Download Tandem</h1>
+      <p class="lead">
+        Send files, photos, and folders between nearby devices with <strong>no internet</strong>,
+        and keep folders synchronized over a direct encrypted peer-to-peer link.
+      </p>
+
+      <div class="controls">
+        <a id="primary-btn" class="btn-primary" href="https://github.com/barun20saha/TANDEM/releases/latest">
+          Download Latest Release
+        </a>
+        <a id="checksums-btn" class="btn-secondary" href="https://github.com/barun20saha/TANDEM/releases/latest">
+          SHA-256 Checksums
+        </a>
+      </div>
+
+      <div class="version-bar">
+        <label for="version-select">Release version:</label>
+        <select id="version-select">
+          <option value="latest">Loading releases...</option>
+        </select>
+        <span id="release-meta"></span>
+      </div>
+
+      <div class="notice" id="os-notice" hidden></div>
+    </section>
+
+    <h2>All Platforms &amp; Formats</h2>
+    <div class="grid" id="platform-grid">
+      <div class="card" data-os="windows">
+        <div>
+          <h3>Windows (10 / 11)</h3>
+          <div class="sub">.exe installer &amp; portable .zip</div>
+          <ul class="asset-list" id="assets-windows"><li><span>Loading...</span></li></ul>
+        </div>
+        <div class="note-box">
+          Unsigned builds trigger a Windows SmartScreen prompt until an Authenticode certificate is configured. Verify hashes via <code>SHA256SUMS.txt</code>.
+        </div>
+      </div>
+
+      <div class="card" data-os="macos">
+        <div>
+          <h3>macOS (13+ Universal)</h3>
+          <div class="sub">.dmg disk image &amp; .tar.gz bundle</div>
+          <ul class="asset-list" id="assets-macos"><li><span>Loading...</span></li></ul>
+        </div>
+        <div class="note-box">
+          Apple Silicon + Intel universal binary. Unsigned builds require right-click &rarr; Open (or Developer ID signing + notarization).
+        </div>
+      </div>
+
+      <div class="card" data-os="linux">
+        <div>
+          <h3>Linux (x86_64 &amp; arm64)</h3>
+          <div class="sub">AppImage, .deb, .rpm, and .tar.gz</div>
+          <ul class="asset-list" id="assets-linux"><li><span>Loading...</span></li></ul>
+        </div>
+        <div class="note-box">
+          <strong>AppImage</strong> runs as a single portable executable on any distro. Use <code>.deb</code> for Ubuntu/Debian and <code>.rpm</code> for Fedora/RHEL.
+        </div>
+      </div>
+
+      <div class="card" data-os="android">
+        <div>
+          <h3>Android (8+)</h3>
+          <div class="sub">.apk direct download &amp; .aab Play bundle</div>
+          <ul class="asset-list" id="assets-android"><li><span>Loading...</span></li></ul>
+        </div>
+        <div class="note-box">
+          Use <strong>sideload.apk</strong> for direct install / F-Droid (full storage access), or <strong>play.aab</strong> for Google Play distribution.
+        </div>
+      </div>
+    </div>
+
+    <h2>Distribution Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>OS</th>
+          <th>Formats Shipped</th>
+          <th>Distribution &amp; Signing Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Windows</strong></td>
+          <td><code>-setup.exe</code> installer, <code>.zip</code></td>
+          <td>Requires an Authenticode code-signing certificate to avoid Windows SmartScreen warnings.</td>
+        </tr>
+        <tr>
+          <td><strong>macOS</strong></td>
+          <td><code>.dmg</code>, <code>.tar.gz</code></td>
+          <td>Production distribution requires a paid Apple Developer account for <code>codesign</code> and <code>notarytool</code> notarization.</td>
+        </tr>
+        <tr>
+          <td><strong>Linux</strong></td>
+          <td><code>.AppImage</code>, <code>.deb</code>, <code>.rpm</code>, <code>.tar.gz</code></td>
+          <td><code>AppImage</code> is the single-file universal binary; <code>.deb</code> and <code>.rpm</code> integrate with distro package managers and <code>systemd --user</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Android</strong></td>
+          <td><code>-sideload.apk</code>, <code>-play.apk</code>, <code>-play.aab</code></td>
+          <td><code>.apk</code> enables direct sideloading or F-Droid distribution; <code>.aab</code> is packaged for Google Play Console.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer>
+      <span>Licensed under MIT &amp; third-party open-source notices.</span>
+      <span>
+        <a href="https://github.com/barun20saha/TANDEM/blob/main/CHANGELOG.md">Changelog</a> &middot;
+        <a href="https://github.com/barun20saha/TANDEM/releases">GitHub Releases</a>
+      </span>
+    </footer>
+  </div>
+
+  <script>
+    const REPO = "barun20saha/TANDEM";
+    const FALLBACK_URL = `https://github.com/${REPO}/releases`;
+
+    function detectPlatform() {
+      const ua = navigator.userAgent || "";
+      const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+      const low = (ua + " " + plat).toLowerCase();
+
+      let os = "linux";
+      if (low.includes("android")) os = "android";
+      else if (low.includes("win")) os = "windows";
+      else if (low.includes("mac") || low.includes("darwin")) os = "macos";
+      else if (low.includes("linux") || low.includes("x11")) os = "linux";
+
+      const isArm = low.includes("arm64") || low.includes("aarch64");
+      return { os, arch: isArm ? "arm64" : "amd64" };
+    }
+
+    function fmtBytes(bytes) {
+      if (!bytes) return "";
+      const units = ["B", "KB", "MB", "GB"];
+      let i = 0, val = bytes;
+      while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+      return `${val.toFixed(1)} ${units[i]}`;
+    }
+
+    function pickBestAsset(assets, detected) {
+      const names = assets.map(a => ({ a, n: a.name.toLowerCase() }));
+      const find = (pred) => (names.find(x => pred(x.n)) || {}).a;
+
+      if (detected.os === "windows") {
+        return (
+          find(n => n.includes(`windows-${detected.arch}`) && n.endsWith("-setup.exe")) ||
+          find(n => n.includes("windows") && n.endsWith("-setup.exe")) ||
+          find(n => n.includes(`windows-${detected.arch}`) && n.endsWith(".zip")) ||
+          find(n => n.includes("windows") && n.endsWith(".zip"))
+        );
+      }
+      if (detected.os === "macos") {
+        return (
+          find(n => n.includes("macos") && n.endsWith(".dmg")) ||
+          find(n => n.includes("macos") && n.endsWith(".tar.gz"))
+        );
+      }
+      if (detected.os === "android") {
+        return (
+          find(n => n.includes("android-sideload") && n.endsWith(".apk")) ||
+          find(n => n.endsWith(".apk"))
+        );
+      }
+      return (
+        find(n => n.endsWith(".appimage")) ||
+        find(n => n.includes(`linux_${detected.arch}`) && n.endsWith(".deb")) ||
+        find(n => n.includes("linux") && n.endsWith(".tar.gz"))
+      );
+    }
+
+    function osLabel(os) {
+      return { windows: "Windows", macos: "macOS", linux: "Linux", android: "Android" }[os] || os;
+    }
+
+    function osNotice(os) {
+      switch (os) {
+        case "windows":
+          return "Windows note: If SmartScreen shows an unrecognized app warning on unsigned builds, choose More info → Run anyway after verifying SHA256SUMS.txt.";
+        case "macos":
+          return "macOS note: Unsigned/unnotarized builds require Control-click → Open on first launch, or Gatekeeper approval in Privacy & Security.";
+        case "linux":
+          return "Linux tip: Make the AppImage executable with chmod +x *.AppImage, or install the .deb / .rpm package for systemd --user integration.";
+        case "android":
+          return "Android note: Direct .apk installs require enabling 'Install unknown apps' once. Use -play.aab when publishing to Google Play.";
+        default:
+          return "";
+      }
+    }
+
+    function renderRelease(rel, detected) {
+      const assets = rel.assets || [];
+      const best = pickBestAsset(assets, detected);
+      const primaryBtn = document.getElementById("primary-btn");
+      const checksumBtn = document.getElementById("checksums-btn");
+      const meta = document.getElementById("release-meta");
+      const notice = document.getElementById("os-notice");
+
+      meta.textContent = `${rel.tag_name}${rel.prerelease ? " (pre-release)" : ""}`;
+
+      if (best) {
+        primaryBtn.href = best.browser_download_url;
+        primaryBtn.textContent = `Download for ${osLabel(detected.os)} (${best.name})`;
+      } else {
+        primaryBtn.href = rel.html_url || FALLBACK_URL;
+        primaryBtn.textContent = `View ${rel.tag_name} on GitHub Releases`;
+      }
+
+      const sums = assets.find(a => a.name === "SHA256SUMS.txt");
+      checksumBtn.href = sums ? sums.browser_download_url : (rel.html_url || FALLBACK_URL);
+
+      const noteText = osNotice(detected.os);
+      if (noteText) {
+        notice.textContent = noteText;
+        notice.hidden = false;
+      }
+
+      document.querySelectorAll(".card[data-os]").forEach(card => {
+        card.classList.toggle("active", card.dataset.os === detected.os);
+      });
+
+      const buckets = { windows: [], macos: [], linux: [], android: [] };
+      for (const a of assets) {
+        const n = a.name.toLowerCase();
+        if (n === "sha256sums.txt" || n === "release-manifest.json") continue;
+        if (n.includes("windows") || n.endsWith(".exe")) buckets.windows.push(a);
+        else if (n.includes("macos") || n.includes("darwin") || n.endsWith(".dmg")) buckets.macos.push(a);
+        else if (n.includes("android") || n.endsWith(".apk") || n.endsWith(".aab")) buckets.android.push(a);
+        else buckets.linux.push(a);
+      }
+
+      for (const [os, list] of Object.entries(buckets)) {
+        const ul = document.getElementById(`assets-${os}`);
+        ul.innerHTML = "";
+        if (list.length === 0) {
+          ul.innerHTML = `<li><span class="size">No artifacts published for this tag yet</span></li>`;
+          continue;
+        }
+        for (const a of list) {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = a.browser_download_url;
+          link.textContent = a.name;
+          const sz = document.createElement("span");
+          sz.className = "size";
+          sz.textContent = fmtBytes(a.size);
+          li.append(link, sz);
+          ul.appendChild(li);
+        }
+      }
+    }
+
+    async function init() {
+      const detected = detectPlatform();
+      document.getElementById("detected-badge").textContent =
+        `Detected platform: ${osLabel(detected.os)} (${detected.arch})`;
+
+      const select = document.getElementById("version-select");
+      try {
+        const resp = await fetch(`https://api.github.com/repos/${REPO}/releases`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const releases = await resp.json();
+        if (!Array.isArray(releases) || releases.length === 0) {
+          throw new Error("No releases published yet");
+        }
+        select.innerHTML = "";
+        releases.forEach((r, idx) => {
+          const opt = document.createElement("option");
+          opt.value = String(idx);
+          opt.textContent = `${r.tag_name}${r.prerelease ? " (pre-release)" : " (latest)"}`;
+          select.appendChild(opt);
+        });
+        select.addEventListener("change", () => {
+          renderRelease(releases[Number(select.value)], detected);
+        });
+        renderRelease(releases[0], detected);
+      } catch (err) {
+        select.innerHTML = `<option>Releases on GitHub</option>`;
+        document.getElementById("release-meta").textContent = "Browse artifacts directly on GitHub Releases.";
+        ["windows", "macos", "linux", "android"].forEach(os => {
+          document.getElementById(`assets-${os}`).innerHTML =
+            `<li><a href="${FALLBACK_URL}">Open GitHub Releases</a></li>`;
+        });
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

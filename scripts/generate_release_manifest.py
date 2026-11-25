@@ -35,7 +35,23 @@ def classify_artifact(name: str) -> dict:
             arch = candidate
             break
 
-    return {"name": name, "platform": platform, "variant": arch}
+    kind = "archive"
+    if lower.endswith("-setup.exe"):
+        kind = "installer"
+    elif lower.endswith(".dmg"):
+        kind = "dmg"
+    elif lower.endswith(".appimage"):
+        kind = "appimage"
+    elif lower.endswith(".deb"):
+        kind = "deb"
+    elif lower.endswith(".rpm"):
+        kind = "rpm"
+    elif lower.endswith(".apk"):
+        kind = "apk"
+    elif lower.endswith(".aab"):
+        kind = "aab"
+
+    return {"name": name, "platform": platform, "variant": arch, "kind": kind}
 
 
 def main() -> int:

@@ -20,11 +20,9 @@ class TandemApp extends StatelessWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: TandemTokens.color_ground,
         colorScheme: const ColorScheme.light(
-          background: TandemTokens.color_ground,
           surface: TandemTokens.color_surface,
           primary: TandemTokens.color_link_direct,
           error: TandemTokens.color_danger,
-          onBackground: TandemTokens.color_text,
           onSurface: TandemTokens.color_text,
         ),
         fontFamily: 'Atkinson Hyperlegible Next',
@@ -39,11 +37,9 @@ class TandemApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: TandemTokens.color_ground_dark,
         colorScheme: const ColorScheme.dark(
-          background: TandemTokens.color_ground_dark,
           surface: TandemTokens.color_surface_dark,
           primary: TandemTokens.color_link_direct_dark,
           error: TandemTokens.color_danger_dark,
-          onBackground: TandemTokens.color_text_dark,
           onSurface: TandemTokens.color_text_dark,
         ),
         fontFamily: 'Atkinson Hyperlegible Next',

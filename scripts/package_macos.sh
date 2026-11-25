@@ -81,7 +81,7 @@ else
     <key>CFBundleName</key>
     <string>Tandem</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.2.0</string>
+    <string>0.2.1</string>
     <key>CFBundleVersion</key>
     <string>${VERSION}</string>
     <key>LSUIElement</key>
@@ -112,5 +112,16 @@ if command -v hdiutil >/dev/null 2>&1; then
     ln -sf /Applications "${DMG_STAGE}/Applications"
     DMG_PATH="${OUT_DIR}/tandem-${VERSION}-macos-universal.dmg"
     hdiutil create -volname "Tandem ${VERSION}" -srcfolder "${DMG_STAGE}" -ov -format UDZO "${DMG_PATH}"
+    if [[ -n "${APPLE_SIGNING_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
+        codesign --force --sign "${APPLE_SIGNING_IDENTITY}" "${DMG_PATH}"
+    fi
+    if [[ -n "${APPLE_NOTARY_APPLE_ID:-}" && -n "${APPLE_NOTARY_TEAM_ID:-}" && -n "${APPLE_NOTARY_PASSWORD:-}" ]] && command -v xcrun >/dev/null 2>&1; then
+        xcrun notarytool submit "${DMG_PATH}" \
+            --apple-id "${APPLE_NOTARY_APPLE_ID}" \
+            --team-id "${APPLE_NOTARY_TEAM_ID}" \
+            --password "${APPLE_NOTARY_PASSWORD}" \
+            --wait
+        xcrun stapler staple "${DMG_PATH}"
+    fi
     echo "Created ${DMG_PATH}"
 fi

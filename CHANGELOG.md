@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-25
+
+### Added
+- Unified GitHub Pages OS-detecting download portal (`site/index.html` + `.github/workflows/pages.yml`) giving visitors one link tailored to Windows, macOS, Linux, or Android.
+- Windows Inno Setup `.exe` installer (`scripts/tandem_installer.iss`) with optional Authenticode signing and firewall configuration.
+- Linux single-file `AppImage` and `.rpm` packaging alongside `.deb` and `.tar.gz` in `scripts/package_deb.sh`.
+- `core/cmd/tandemd_android` C-shared entrypoint for Android `libtandemd.so` NDK compilation.
+
+### Fixed
+- Removed deprecated `package` attribute from `app/android/app/src/main/AndroidManifest.xml` for Android Gradle Plugin 8+ compatibility and added AndroidX dependencies for `TandemService.kt`.
+- Fixed `flutter analyze` deprecated `ColorScheme` properties in `app/lib/main.dart` and added `app/analysis_options.yaml`.
+- Updated `security.yml` to run `govulncheck` on the latest stable Go toolchain and handle unconfigured Dependency Graph gracefully.
+
 ## [0.2.0] - 2026-11-25
 
 ### Added
@@ -33,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flutter UI screens (`S1`–`S11`) and design system token compiler/auditor (`design/audit.py` at 100% token coverage).
 - Chaos test suite (`tests/chaos`) and self-hosted relay/discovery Docker Compose stack (`infra/`).
 
-[Unreleased]: https://github.com/barun20saha/TANDEM/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/barun20saha/TANDEM/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/barun20saha/TANDEM/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/barun20saha/TANDEM/compare/v0.1.0-alpha.1...v0.2.0
 [0.1.0-alpha.1]: https://github.com/barun20saha/TANDEM/releases/tag/v0.1.0-alpha.1

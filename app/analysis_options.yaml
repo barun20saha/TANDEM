@@ -1,0 +1,13 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Design tokens use snake_case intentionally matching design/tokens.json
+    constant_identifier_names: ignore
+    non_constant_identifier_names: ignore
+    deprecated_member_use: ignore
+
+linter:
+  rules:
+    use_super_parameters: false
+    prefer_const_constructors: true

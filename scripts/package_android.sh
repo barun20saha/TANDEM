@@ -65,6 +65,8 @@ with open(target, "r", encoding="utf-8") as f:
 is_kts = target.endswith(".kts")
 text = re.sub(r'namespace\s*=?\s*"[^"]*"', 'namespace = "com.tandem.sync"' if is_kts else 'namespace "com.tandem.sync"', text)
 text = re.sub(r'applicationId\s*=?\s*"[^"]*"', 'applicationId = "com.tandem.sync"' if is_kts else 'applicationId "com.tandem.sync"', text)
+text = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 24', text)
+text = re.sub(r'minSdkVersion\s+flutter\.minSdkVersion', 'minSdkVersion 24', text)
 
 if "flavorDimensions" not in text:
     if is_kts:
@@ -95,6 +97,23 @@ if "flavorDimensions" not in text:
 """
     text = re.sub(r'(buildTypes\s*\{)', flavor_block + r'\n    \1', text, count=1)
 
+if "androidx.core:core-ktx" not in text:
+    if is_kts:
+        deps_block = """
+dependencies {
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.annotation:annotation:1.8.2")
+}
+"""
+    else:
+        deps_block = """
+dependencies {
+    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "androidx.annotation:annotation:1.8.2"
+}
+"""
+    text = text.rstrip() + "\n" + deps_block
+
 with open(target, "w", encoding="utf-8") as f:
     f.write(text)
 print(f"Configured {target}")
@@ -122,7 +141,7 @@ if [[ -n "${NDK_DIR}" && -d "${NDK_DIR}" ]] && command -v go >/dev/null 2>&1; th
                 cd "${REPO_ROOT}/core"
                 CC="${TOOLCHAIN}/${cc}" CGO_ENABLED=1 GOOS=android GOARCH="${goarch}" GOARM="${goarm}" \
                     go build -buildmode=c-shared -trimpath -ldflags="-s -w" \
-                    -o "${jni_dir}/libtandemd.so" ./pal_android
+                    -o "${jni_dir}/libtandemd.so" ./cmd/tandemd_android
             )
             rm -f "${jni_dir}/libtandemd.h"
         }
