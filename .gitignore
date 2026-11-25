@@ -30,3 +30,5 @@ build/
 node_modules/
 .idea/
 .vscode/
+app/android/local.properties
+app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
