@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 import 'buttons.dart';
 
@@ -8,7 +9,7 @@ enum PairingPanelStep {
   confirmMatch,
 }
 
-/// PairingPanel: QR code and 6-digit verification code panel (Section 6 & 8.3).
+/// PairingPanel: QR code & 6-digit verification panel with tabular spacing and theme adaptation.
 class PairingPanel extends StatelessWidget {
   final PairingPanelStep step;
   final String qrPayload;
@@ -29,72 +30,83 @@ class PairingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = TandemTheme.of(context);
+    final spacedDigits = shortCode.split('').join(' ');
+
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(TandemTokens.space_5),
       decoration: BoxDecoration(
-        color: TandemTokens.color_surface,
+        color: t.surface,
         borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
-        border: Border.all(color: TandemTokens.color_border, width: 0.5),
+        border: Border.all(color: t.border, width: 0.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Pair with another device',
-            style: TandemTokens.text_xl.copyWith(
-              fontFamily: 'Familjen Grotesk',
-              fontWeight: FontWeight.w700,
+          if (step == PairingPanelStep.showQR) ...[
+            Text(
+              'Share pairing credentials',
+              style: t.sectionTitleStyle,
             ),
-          ),
-          const SizedBox(height: TandemTokens.space_2),
-          Text(
-            'Scan this code on your other device. Both devices must confirm.',
-            style: TandemTokens.text_sm.copyWith(
-              color: TandemTokens.color_text.withOpacity(0.75),
+            const SizedBox(height: TandemTokens.space_1),
+            Text(
+              'Enter this code or scan the pairing URI on the second device.',
+              style: t.secondaryStyle,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: TandemTokens.space_5),
-
-          // Code Display (Tabular figures)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: TandemTokens.space_4,
-              vertical: TandemTokens.space_3,
-            ),
-            decoration: BoxDecoration(
-              color: TandemTokens.color_ground,
-              borderRadius: BorderRadius.circular(TandemTokens.radius_control),
-            ),
-            child: Text(
-              shortCode,
-              style: TandemTokens.text_2xl.copyWith(
-                letterSpacing: 4.0,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                fontWeight: FontWeight.w700,
-                color: TandemTokens.color_link_direct,
+            const SizedBox(height: TandemTokens.space_4),
+            Semantics(
+              label: '6-digit verification code: $spacedDigits',
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TandemTokens.space_4,
+                  vertical: TandemTokens.space_3,
+                ),
+                decoration: BoxDecoration(
+                  color: t.ground,
+                  borderRadius: BorderRadius.circular(TandemTokens.radius_control),
+                  border: Border.all(color: t.border, width: 0.5),
+                ),
+                child: SelectableText(
+                  shortCode.isNotEmpty ? shortCode : 'Unavailable',
+                  style: TandemTokens.text_2xl.copyWith(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 4.0,
+                    color: t.text,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: TandemTokens.space_5),
-
-          if (step == PairingPanelStep.confirmMatch) ...[
-            Text(
-              'Does your other device show the code $shortCode?',
-              style: TandemTokens.text_md,
-              textAlign: TextAlign.center,
+            const SizedBox(height: TandemTokens.space_3),
+            Text('Pairing URI', style: t.captionStyle),
+            const SizedBox(height: TandemTokens.space_1),
+            SelectableText(
+              qrPayload.isNotEmpty ? qrPayload : 'Unavailable',
+              style: t.monoStyle.copyWith(fontSize: 12.0, color: t.mutedText),
             ),
-            const SizedBox(height: TandemTokens.space_5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ] else if (step == PairingPanelStep.confirmMatch) ...[
+            Text(
+              'Confirm verification code',
+              style: t.sectionTitleStyle,
+            ),
+            const SizedBox(height: TandemTokens.space_2),
+            Text(
+              'Does $remoteDeviceName show the code $shortCode?',
+              style: t.bodyStyle,
+            ),
+            const SizedBox(height: TandemTokens.space_4),
+            Wrap(
+              spacing: TandemTokens.space_3,
+              runSpacing: TandemTokens.space_2,
               children: [
                 TandemButton(
                   label: 'Codes do not match',
                   variant: TandemButtonVariant.secondary,
                   onPressed: onRejectMatch,
                 ),
-                const SizedBox(width: TandemTokens.space_3),
                 TandemButton(
                   label: 'Confirm match',
                   variant: TandemButtonVariant.primary,

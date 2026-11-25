@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 
 enum BannerVariant {
@@ -7,7 +8,7 @@ enum BannerVariant {
   error,
 }
 
-/// Banner: Inline persistent notification explaining a system state with at most one action (Section 8.3 & 9.3).
+/// BannerNotification: Inline persistent state/diagnostic banner with left semantic accent.
 class BannerNotification extends StatelessWidget {
   final String message;
   final BannerVariant variant;
@@ -22,28 +23,28 @@ class BannerNotification extends StatelessWidget {
     this.onAction,
   }) : super(key: key);
 
-  Color get borderColor {
+  Color _accentColor(TandemTheme t) {
     switch (variant) {
       case BannerVariant.info:
-        return TandemTokens.color_link_direct;
+        return t.linkDirect;
       case BannerVariant.warning:
-        return TandemTokens.color_link_relay;
+        return t.linkRelay;
       case BannerVariant.error:
-        return TandemTokens.color_danger;
+        return t.danger;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = TandemTheme.of(context);
+    final accent = _accentColor(t);
+
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: TandemTokens.space_4,
-        vertical: TandemTokens.space_2,
-      ),
+      margin: const EdgeInsets.symmetric(vertical: TandemTokens.space_1),
       decoration: BoxDecoration(
-        color: TandemTokens.color_surface,
+        color: t.surface,
         borderRadius: BorderRadius.circular(TandemTokens.radius_control),
-        border: Border.all(color: TandemTokens.color_border, width: 0.5),
+        border: Border.all(color: t.border, width: 0.5),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(TandemTokens.radius_control),
@@ -51,17 +52,20 @@ class BannerNotification extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 4.0, color: borderColor),
+              Container(width: 4.0, color: accent),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(TandemTokens.space_3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TandemTokens.space_4,
+                    vertical: TandemTokens.space_3,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
                           message,
-                          style: TandemTokens.text_sm,
+                          style: t.bodyStyle.copyWith(fontSize: 14.0),
                         ),
                       ),
                       if (actionLabel != null && onAction != null) ...[
@@ -69,12 +73,17 @@ class BannerNotification extends StatelessWidget {
                         TextButton(
                           onPressed: onAction,
                           style: TextButton.styleFrom(
-                            foregroundColor: TandemTokens.color_link_direct,
-                            padding: const EdgeInsets.symmetric(horizontal: TandemTokens.space_2),
+                            foregroundColor: t.linkDirect,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: TandemTokens.space_2,
+                            ),
                           ),
                           child: Text(
                             actionLabel!,
-                            style: TandemTokens.text_sm.copyWith(fontWeight: FontWeight.w600),
+                            style: TandemTokens.text_sm.copyWith(
+                              color: t.linkDirect,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

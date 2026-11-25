@@ -6,57 +6,58 @@ In accordance with Section 10 of the Tandem Agent Guide, this document provides 
 
 ## Screen S1: First Run
 
-- **Overview:** Introduces Tandem in two concise lines, explaining Send vs. Sync. Directs the user to pair their first device.
-- **Layout:** Centered single-column layout on `color-ground`. Max width 480px.
-- **Tokens Used:** `color-ground`, `color-surface`, `color-text`, `color-link-direct`, `text-2xl`, `text-md`, `space-5`, `space-6`, `radius-panel`.
-- **Components:** `EmptyState`, `TandemButton` (size: lg, variant: primary).
+- **Overview:** Introduces Tandem in two concise lines, explaining Send vs. Sync, plus real local device identity (`myDeviceName`, `myDeviceId`). Directs the user to pair their first device or open System Health Check.
+- **Layout:** Left-aligned single-column layout on `color-ground`. Max width 680px (`WorkspacePane`).
+- **Tokens Used:** `color-ground`, `color-border`, `color-text`, `color-link-direct`, `text-2xl`, `text-md`, `space-5`, `space-6`.
+- **Components:** `TandemButton` (size: lg, variant: primary `"Pair first device"`, secondary `"System health check"`).
 - **Responsive Behavior:**
-  - Desktop / Tablet / Mobile: Identical centered layout. One primary button: `"Pair device"`.
-- **Edge Cases:** Screen-reader users hear Send vs. Sync distinction immediately upon landing.
-- **Accessibility:** Default focus on `"Pair device"`.
+  - Desktop / Tablet / Mobile: Identical left-aligned layout with 0.5px horizontal rules separating `Send` and `Sync` descriptions.
+- **Edge Cases:** Screen-reader users hear Send vs. Sync distinction immediately upon landing. Long Device ID wraps cleanly at `11px` on narrow screens.
+- **Accessibility:** Default focus on `"Pair first device"`.
 
 ---
 
 ## Screen S2: Folders (Main Sync View)
 
-- **Overview:** Displays user's synced folders, total data size, and sync states.
-- **Layout:** Dense row list on `color-surface`. Header displays view title and `"Add folder"` action.
-- **Tokens Used:** `color-surface`, `color-border`, `color-text`, `color-ok`, `color-danger`, `text-xl`, `text-md`, `text-xs`, `space-4`, `space-2`.
-- **Components:** `FolderRow`, `TandemButton` (variant: primary), `EmptyState` (`folders.empty`).
+- **Overview:** Displays user's synced folders, sync mode, total data size, peer count, and sync states, plus persistent `BannerNotification` warnings when `SystemHealth` reports faults.
+- **Layout:** Left-aligned workspace (`maxWidth: 960px`) with column-aligned table header on `>= 768px` and dense `FolderRow` list on `color-surface` separated by `0.5px` `color-border` dividers.
+- **Tokens Used:** `color-ground`, `color-surface`, `color-border`, `color-text`, `color-ok`, `color-danger`, `text-xl`, `text-md`, `text-xs`, `space-4`, `space-2`.
+- **Components:** `FolderRow`, `BannerNotification`, `TandemButton` (variant: primary `"Choose folder"`), `EmptyState` (`folders.empty`).
 - **Responsive Behavior:**
-  - Desktop (>1024px): Right pane in two-pane view.
-  - Tablet (768-1024px): Full-width pane.
-  - Mobile (<768px): Primary tab in bottom navigation. Floating or top-right `"Add folder"` action.
+  - Desktop (>=1024px): Right workspace (`maxWidth: 960px`) beside persistent `288px` left navigation + live `Peers` rail.
+  - Tablet (768-1024px): Full-width scrollable pane with table columns.
+  - Mobile (<768px): Primary tab in bottom navigation (`0.5px` top hairline, `elevation: 0`). Compact two-line `FolderRow` with middle-truncated path.
 - **Edge Cases:** 100,000 files in folder: UI uses virtualized ListView, never blocks UI thread.
 
 ---
 
 ## Screen S3: Folder Detail
 
-- **Overview:** Shows file tree, sharing peers, conflict warnings, trash management, and folder mode (Send & Receive, Send-only, Receive-only).
-- **Tokens Used:** `color-surface`, `color-border`, `color-link-direct`, `color-danger`, `text-lg`, `text-sm`, `space-3`, `space-4`.
-- **Components:** `BannerNotification` (conflicts), `TandemButton` (pause/resume), `ConfirmDialog` (`stop.confirm`).
-- **Edge Cases:** Low disk space: Displays persistent error banner (`err.disk_full`).
+- **Overview:** Shows folder path, file count, size, resolved peer names, conflict/disk-full banners, folder mode picker (`Send & Receive`, `Send only`, `Receive only`), `.tandem-trash` recovery list, and `"Stop syncing folder"`.
+- **Tokens Used:** `color-ground`, `color-surface`, `color-border`, `color-link-direct`, `color-danger`, `text-lg`, `text-sm`, `space-3`, `space-4`.
+- **Components:** `BannerNotification`, `TandemButton` (Pause/Resume, Restore, Stop syncing), `ConfirmDialog` (`confirm.stop_syncing`).
+- **Responsive Behavior:** Embedded inside the `960px` desktop workspace (preserving the left rail) or pushed as a full screen on mobile.
+- **Edge Cases:** Low disk space: Displays persistent plain-language error banner without raw internal error prefixes.
 
 ---
 
 ## Screen S4: Send (One-Off Transfer)
 
-- **Overview:** Direct, ephemeral file transfer (Section 1 & DECISION D2). Pick files, pick nearby device, send now.
-- **Tokens Used:** `color-ground`, `color-surface`, `color-link-direct`, `text-xl`, `text-md`, `space-4`, `space-5`.
-- **Components:** `DeviceRow`, `TransferRow`, `EmptyState` (`send.empty`).
-- **States:** Idle, Transferring (live tabular figures for speed and remaining time), Complete.
+- **Overview:** Direct, ephemeral file transfer (Section 1 & DECISION D2). Inline composer (recipient dropdown + multi-line file paths) above active/completed `TransferRow` queue.
+- **Tokens Used:** `color-ground`, `color-surface`, `color-border`, `color-link-direct`, `text-xl`, `text-md`, `space-4`, `space-5`, `radius-control`, `radius-panel`.
+- **Components:** `TransferRow` (friendly peer name, link tag, tabular speed & remaining bytes), `EmptyState` (`send.empty`).
+- **States:** Idle, Transferring (live tabular figures for speed and remaining bytes), Complete, Failed.
 
 ---
 
 ## Screen S5: Devices
 
-- **Overview:** Lists this device and all paired and discovered peers.
-- **Layout:** Dense vertical list of `DeviceRow` components with signature `LinkLine` indicators.
+- **Overview:** Lists this device, paired devices, and nearby discovered unpaired peers.
+- **Layout:** Left-aligned `960px` workspace with right-aligned `"Offline transfer guide"` and `"Pair device"` actions above `DeviceRow` lists with signature `LinkLine` indicators.
 - **Tokens Used:** `color-ground`, `color-surface`, `color-border`, `color-link-direct`, `color-link-relay`, `text-xl`, `text-sm`.
 - **Responsive Behavior:**
-  - Desktop (>1024px): Left navigation pane (fixed width 320px). Selected device shows `LinkLine` connecting to right pane.
-  - Mobile (<768px): Tab in bottom navigation.
+  - Desktop (>=1024px): Left navigation + live `Peers` rail (`288px`) remains persistent; selecting any device opens `LinkStatusScreen` inside the right `960px` workspace.
+  - Mobile (<768px): Tab in bottom navigation; selecting a device pushes `LinkStatusScreen`.
 
 ---
 

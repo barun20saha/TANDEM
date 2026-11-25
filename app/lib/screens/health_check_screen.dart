@@ -4,14 +4,20 @@ import '../components/buttons.dart';
 import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../state/tandem_controller.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 
-/// Screen S8: System Health Check (Section 10.1).
+/// Screen S9: System Health Check (Section 10.1).
 /// Renders real /health diagnostics from tandemd.
 class HealthCheckScreen extends StatefulWidget {
   final TandemController controller;
+  final bool embedded;
 
-  const HealthCheckScreen({Key? key, required this.controller}) : super(key: key);
+  const HealthCheckScreen({
+    Key? key,
+    required this.controller,
+    this.embedded = false,
+  }) : super(key: key);
 
   @override
   State<HealthCheckScreen> createState() => _HealthCheckScreenState();
@@ -26,8 +32,20 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
     if (mounted) setState(() => _running = false);
   }
 
+  String _capitalize(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+
+  String? _firewallHelp(SystemHealth h) {
+    final parts = <String>[
+      if (h.firewallRemediation.isNotEmpty) h.firewallRemediation,
+      if (h.firewallCommand.isNotEmpty) h.firewallCommand,
+    ];
+    return parts.isEmpty ? null : parts.join('\n');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final t = TandemTheme.of(context);
     final SystemHealth? health = widget.controller.health;
     final DaemonStatus? status = widget.controller.status;
 
@@ -61,14 +79,10 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                 ),
                 (
                   name: 'Host firewall',
-                  stateLabel: health.firewallState,
+                  stateLabel: _capitalize(health.firewallState),
                   ok: health.firewallState == 'open' ||
                       health.firewallState == 'unknown',
-                  help: health.firewallRemediation.isNotEmpty
-                      ? health.firewallRemediation
-                      : (health.firewallCommand.isNotEmpty
-                          ? health.firewallCommand
-                          : null),
+                  help: _firewallHelp(health),
                 ),
                 (
                   name: 'Storage health',
@@ -91,16 +105,24 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
 
     final hasIssues = checks.any((c) => !c.ok);
 
-    return Scaffold(
-      backgroundColor: TandemTokens.color_ground,
-      appBar: AppBar(
-        title: const Text('System Health Check'),
-        backgroundColor: TandemTokens.color_surface,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(TandemTokens.space_4),
+    final body = WorkspacePane(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text('System Health Check', style: t.pageTitleStyle),
+              ),
+              TandemButton(
+                label: 'Run diagnostics again',
+                variant: TandemButtonVariant.primary,
+                isLoading: _running,
+                onPressed: _running ? null : _rerunChecks,
+              ),
+            ],
+          ),
+          const SizedBox(height: TandemTokens.space_4),
           if (health == null)
             const BannerNotification(
               variant: BannerVariant.warning,
@@ -118,19 +140,16 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
               message: 'One or more checks reported an issue below.',
             ),
           const SizedBox(height: TandemTokens.space_4),
+          if (checks.isNotEmpty) Divider(height: 1.0, color: t.border),
           ...checks.map(
             (check) => Container(
-              margin: const EdgeInsets.only(bottom: TandemTokens.space_3),
-              padding: const EdgeInsets.all(TandemTokens.space_4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: TandemTokens.space_4,
+                vertical: TandemTokens.space_3,
+              ),
               decoration: BoxDecoration(
-                color: TandemTokens.color_surface,
-                borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
-                border: Border.all(
-                  color: check.ok
-                      ? TandemTokens.color_border
-                      : TandemTokens.color_link_relay,
-                  width: check.ok ? 0.5 : 1.0,
-                ),
+                color: t.surface,
+                border: Border(bottom: BorderSide(color: t.border, width: 0.5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,27 +157,21 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                   Row(
                     children: [
                       Icon(
-                        check.ok ? Icons.check_circle : Icons.warning_amber,
-                        size: 20,
-                        color: check.ok
-                            ? TandemTokens.color_ok
-                            : TandemTokens.color_link_relay_text,
+                        check.ok ? Icons.check_circle_outline : Icons.warning_amber,
+                        size: 18.0,
+                        color: check.ok ? t.ok : t.linkRelayText,
                       ),
                       const SizedBox(width: TandemTokens.space_3),
                       Expanded(
                         child: Text(
                           check.name,
-                          style: TandemTokens.text_md.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: t.bodyStyle.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                       Text(
                         check.stateLabel,
                         style: TandemTokens.text_sm.copyWith(
-                          color: check.ok
-                              ? TandemTokens.color_ok
-                              : TandemTokens.color_link_relay_text,
+                          color: check.ok ? t.ok : t.linkRelayText,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -166,27 +179,32 @@ class _HealthCheckScreenState extends State<HealthCheckScreen> {
                   ),
                   if (check.help != null && check.help!.isNotEmpty) ...[
                     const SizedBox(height: TandemTokens.space_2),
-                    Text(
+                    SelectableText(
                       check.help!,
-                      style: TandemTokens.text_xs.copyWith(fontFamily: 'monospace'),
+                      style: t.monoStyle.copyWith(fontSize: 12.0, color: t.mutedText),
                     ),
                   ],
                 ],
               ),
             ),
           ),
-          const SizedBox(height: TandemTokens.space_4),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TandemButton(
-              label: 'Run diagnostics again',
-              variant: TandemButtonVariant.primary,
-              isLoading: _running,
-              onPressed: _running ? null : _rerunChecks,
-            ),
-          ),
         ],
       ),
+    );
+
+    if (widget.embedded) {
+      return SingleChildScrollView(child: body);
+    }
+
+    return Scaffold(
+      backgroundColor: t.ground,
+      appBar: AppBar(
+        title: Text('System Health Check', style: t.sectionTitleStyle),
+        backgroundColor: t.surface,
+        foregroundColor: t.text,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(child: body),
     );
   }
 }

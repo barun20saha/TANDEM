@@ -4,9 +4,10 @@ import '../components/buttons.dart';
 import '../components/pairing_panel.dart';
 import '../models/models.dart';
 import '../state/tandem_controller.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 
-/// Screen S6: Device Pairing Flow (Section 10.1).
+/// Screen S7: Device Pairing Flow (Section 10.1).
 /// Fetches real local pairing payload from tandemd and submits peer Device ID + code.
 class PairingScreen extends StatefulWidget {
   final TandemController controller;
@@ -124,82 +125,93 @@ class _PairingScreenState extends State<PairingScreen> {
     }
   }
 
+  InputDecoration _inputDecoration(TandemTheme t, String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: t.secondaryStyle,
+      filled: true,
+      fillColor: t.ground,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: TandemTokens.space_3,
+        vertical: TandemTokens.space_3,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TandemTokens.radius_control),
+        borderSide: BorderSide(color: t.border, width: 0.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TandemTokens.radius_control),
+        borderSide: BorderSide(color: t.linkDirect, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final t = TandemTheme.of(context);
     final PairingPayload? payload = widget.controller.pairingPayload;
     final discoveredUnpaired =
         widget.controller.devices.where((d) => !d.isPaired).toList();
 
-    return Scaffold(
-      backgroundColor: TandemTokens.color_ground,
-      appBar: AppBar(
-        title: const Text('Pair a device'),
-        backgroundColor: TandemTokens.color_surface,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Reload pairing code',
-            onPressed: _loadLocalCode,
+    final leftColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_loadingCode)
+          Padding(
+            padding: const EdgeInsets.all(TandemTokens.space_5),
+            child: CircularProgressIndicator(color: t.linkDirect),
+          )
+        else if (payload == null)
+          BannerNotification(
+            variant: BannerVariant.warning,
+            message: 'Could not retrieve a local pairing code from the daemon.',
+            actionLabel: 'Retry',
+            onAction: _loadLocalCode,
+          )
+        else
+          PairingPanel(
+            step: PairingPanelStep.showQR,
+            qrPayload: payload.qrPayload,
+            shortCode: payload.shortCode,
+            remoteDeviceName: payload.name,
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(TandemTokens.space_4),
-        children: [
-          if (_errorText != null) ...[
-            BannerNotification(
-              variant: BannerVariant.error,
-              message: _errorText!,
-            ),
-            const SizedBox(height: TandemTokens.space_3),
-          ],
-          if (_successText != null) ...[
-            BannerNotification(
-              variant: BannerVariant.info,
-              message: _successText!,
-            ),
-            const SizedBox(height: TandemTokens.space_3),
-          ],
-          if (_loadingCode)
-            const Padding(
-              padding: EdgeInsets.all(TandemTokens.space_6),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (payload == null)
-            BannerNotification(
-              variant: BannerVariant.warning,
-              message: 'Could not retrieve a local pairing code from the daemon.',
-              actionLabel: 'Retry',
-              onAction: _loadLocalCode,
-            )
-          else
-            Center(
-              child: PairingPanel(
-                step: PairingPanelStep.showQR,
-                qrPayload: payload.qrPayload,
-                shortCode: payload.shortCode,
-                remoteDeviceName: payload.name,
-              ),
-            ),
+        if (discoveredUnpaired.isNotEmpty) ...[
           const SizedBox(height: TandemTokens.space_5),
-          if (discoveredUnpaired.isNotEmpty) ...[
-            Text(
-              'Nearby discovered devices',
-              style: TandemTokens.text_md.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: TandemTokens.space_2),
-            for (final peer in discoveredUnpaired)
-              Card(
-                color: TandemTokens.color_surface,
-                child: ListTile(
-                  title: Text(peer.name.isNotEmpty ? peer.name : peer.id),
-                  subtitle: Text(
-                    '${peer.id} ${peer.addresses.isNotEmpty ? "• ${peer.addresses.first}" : ""}',
-                    style: TandemTokens.text_xs.copyWith(fontFamily: 'monospace'),
+          Text('Nearby discovered devices', style: t.sectionTitleStyle),
+          const SizedBox(height: TandemTokens.space_2),
+          Divider(height: 1.0, color: t.border),
+          for (final peer in discoveredUnpaired)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: TandemTokens.space_3,
+                vertical: TandemTokens.space_3,
+              ),
+              decoration: BoxDecoration(
+                color: t.surface,
+                border: Border(bottom: BorderSide(color: t.border, width: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          peer.name.isNotEmpty ? peer.name : peer.id,
+                          style: t.bodyStyle.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2.0),
+                        Text(
+                          peer.addresses.isNotEmpty
+                              ? peer.addresses.first
+                              : peer.id,
+                          style: t.monoStyle.copyWith(fontSize: 12.0, color: t.mutedText),
+                        ),
+                      ],
+                    ),
                   ),
-                  trailing: TandemButton(
-                    label: 'Select',
+                  TandemButton(
+                    label: 'Use peer',
                     variant: TandemButtonVariant.secondary,
                     onPressed: () {
                       _deviceIdCtrl.text = peer.id;
@@ -209,65 +221,124 @@ class _PairingScreenState extends State<PairingScreen> {
                       }
                     },
                   ),
-                ),
+                ],
               ),
-            const SizedBox(height: TandemTokens.space_4),
-          ],
+            ),
+        ],
+      ],
+    );
+
+    final rightColumn = Container(
+      padding: const EdgeInsets.all(TandemTokens.space_5),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
+        border: Border.all(color: t.border, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Connect to peer', style: t.sectionTitleStyle),
+          const SizedBox(height: TandemTokens.space_1),
           Text(
-            'Pair with another device',
-            style: TandemTokens.text_md.copyWith(fontWeight: FontWeight.w700),
+            'Enter the second device identifier and optional 6-digit code.',
+            style: t.secondaryStyle,
           ),
           const SizedBox(height: TandemTokens.space_3),
-          Container(
-            padding: const EdgeInsets.all(TandemTokens.space_4),
-            decoration: BoxDecoration(
-              color: TandemTokens.color_surface,
-              borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
-              border: Border.all(color: TandemTokens.color_border, width: 0.5),
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _deviceIdCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Peer Device ID or tandem://pair URI',
-                  ),
-                ),
-                const SizedBox(height: TandemTokens.space_3),
-                TextField(
-                  controller: _codeCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '6-digit verification code (optional)',
-                  ),
-                ),
-                const SizedBox(height: TandemTokens.space_3),
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Device label (optional)',
-                  ),
-                ),
-                const SizedBox(height: TandemTokens.space_3),
-                TextField(
-                  controller: _addrCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Address hint, e.g. tcp://192.168.1.20:22000 (optional)',
-                  ),
-                ),
-                const SizedBox(height: TandemTokens.space_4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TandemButton(
-                    label: 'Pair device',
-                    variant: TandemButtonVariant.primary,
-                    isLoading: _submitting,
-                    onPressed: _submitting ? null : _submitPair,
-                  ),
-                ),
-              ],
+          TextField(
+            controller: _deviceIdCtrl,
+            style: t.monoStyle,
+            decoration: _inputDecoration(
+              t,
+              'Peer Device ID or tandem://pair URI',
             ),
           ),
+          const SizedBox(height: TandemTokens.space_3),
+          TextField(
+            controller: _codeCtrl,
+            style: t.monoStyle,
+            decoration: _inputDecoration(
+              t,
+              '6-digit verification code (optional)',
+            ),
+          ),
+          const SizedBox(height: TandemTokens.space_3),
+          TextField(
+            controller: _nameCtrl,
+            style: t.bodyStyle,
+            decoration: _inputDecoration(t, 'Device label (optional)'),
+          ),
+          const SizedBox(height: TandemTokens.space_3),
+          TextField(
+            controller: _addrCtrl,
+            style: t.monoStyle,
+            decoration: _inputDecoration(
+              t,
+              'Address hint (optional, e.g. tcp://192.168.1.20:22000)',
+            ),
+          ),
+          const SizedBox(height: TandemTokens.space_4),
+          TandemButton(
+            label: 'Pair device',
+            variant: TandemButtonVariant.primary,
+            isLoading: _submitting,
+            onPressed: _submitting ? null : _submitPair,
+          ),
         ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: t.ground,
+      appBar: AppBar(
+        title: Text('Pair a device', style: t.sectionTitleStyle),
+        backgroundColor: t.surface,
+        foregroundColor: t.text,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Reload pairing code',
+            onPressed: _loadLocalCode,
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: WorkspacePane(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_errorText != null) ...[
+                BannerNotification(
+                  variant: BannerVariant.error,
+                  message: _errorText!,
+                ),
+                const SizedBox(height: TandemTokens.space_3),
+              ],
+              if (_successText != null) ...[
+                BannerNotification(
+                  variant: BannerVariant.info,
+                  message: _successText!,
+                ),
+                const SizedBox(height: TandemTokens.space_3),
+              ],
+              if (t.isTabletOrLarger)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 5, child: leftColumn),
+                    const SizedBox(width: TandemTokens.space_5),
+                    Expanded(flex: 6, child: rightColumn),
+                  ],
+                )
+              else ...[
+                leftColumn,
+                const SizedBox(height: TandemTokens.space_5),
+                rightColumn,
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

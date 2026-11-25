@@ -55,7 +55,7 @@ MockClient _emptyDaemonMock({bool failAll = false}) {
         path.endsWith('/send')) {
       return http.Response('[]', 200);
     }
-    if (path.endsWith('/pair/code')) {
+    if (path.endsWith('/pairing/code')) {
       return http.Response(
         json.encode({
           'deviceId': 'TESTDEV-AAAAAAA-BBBBBBB-CCCCCCC-DDDDDDD-EEEEEEE-FFFFFFF-GGGGGGG',

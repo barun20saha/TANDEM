@@ -48,7 +48,7 @@ class DaemonLauncher {
     final sep = Platform.pathSeparator;
     final candidates = <String>[
       '$exeDir$sep$name',
-      if (Platform.isMacOS) '$exeDir${sep}..${sep}Helpers$sep$name',
+      if (Platform.isMacOS) '$exeDir$sep..${sep}Helpers$sep$name',
       'bin$sep$name',
       if (!Platform.isWindows) '/usr/bin/$name',
       if (!Platform.isWindows) '/usr/local/bin/$name',
@@ -60,8 +60,8 @@ class DaemonLauncher {
   }
 
   Future<DaemonLaunchResult> connectOrStart() async {
-    final bind = _configuredBind;
-    final baseUrl = 'http://$bind/api/v1';
+    const bind = _configuredBind;
+    const baseUrl = 'http://$bind/api/v1';
 
     if (Platform.isAndroid) {
       // Android runs embedded native engine inside TandemService foreground service.

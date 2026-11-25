@@ -2,32 +2,42 @@ import 'package:flutter/material.dart';
 import '../components/buttons.dart';
 import '../models/models.dart';
 import '../state/tandem_controller.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 
 /// Screen S10: Settings & Daemon Runtime Info (Section 10.1).
 class SettingsScreen extends StatelessWidget {
   final TandemController controller;
+  final bool embedded;
 
-  const SettingsScreen({Key? key, required this.controller}) : super(key: key);
+  const SettingsScreen({
+    Key? key,
+    required this.controller,
+    this.embedded = false,
+  }) : super(key: key);
 
-  Widget _infoTile(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: TandemTokens.space_2),
+  Widget _infoRow(TandemTheme t, String label, String value, {bool mono = true}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: TandemTokens.space_4,
+        vertical: TandemTokens.space_3,
+      ),
+      decoration: BoxDecoration(
+        color: t.surface,
+        border: Border(bottom: BorderSide(color: t.border, width: 0.5)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TandemTokens.text_md.copyWith(
-              color: TandemTokens.color_text.withAlpha(153),
-            ),
+          SizedBox(
+            width: 160.0,
+            child: Text(label, style: t.secondaryStyle),
           ),
-          const SizedBox(width: TandemTokens.space_3),
-          Flexible(
-            child: Text(
+          Expanded(
+            child: SelectableText(
               value,
               textAlign: TextAlign.right,
-              style: TandemTokens.text_sm.copyWith(fontFamily: 'monospace'),
+              style: mono ? t.monoStyle : t.bodyStyle,
             ),
           ),
         ],
@@ -37,67 +47,72 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = TandemTheme.of(context);
     final DaemonStatus? status = controller.status;
 
-    return Scaffold(
-      backgroundColor: TandemTokens.color_ground,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: TandemTokens.color_surface,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(TandemTokens.space_4),
+    final content = WorkspacePane(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Local Daemon',
-            style: TandemTokens.text_md.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: TandemTokens.space_2),
-          Container(
-            padding: const EdgeInsets.all(TandemTokens.space_4),
-            decoration: BoxDecoration(
-              color: TandemTokens.color_surface,
-              borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
-              border: Border.all(color: TandemTokens.color_border, width: 0.5),
-            ),
-            child: status == null
-                ? const Text(
-                    'Daemon status is not available yet.',
-                    style: TandemTokens.text_md,
-                  )
-                : Column(
-                    children: [
-                      _infoTile('Device name', status.myDeviceName),
-                      const Divider(height: 1.0, color: TandemTokens.color_border),
-                      _infoTile('Device ID', status.myDeviceId),
-                      const Divider(height: 1.0, color: TandemTokens.color_border),
-                      _infoTile('Daemon version', status.version),
-                      const Divider(height: 1.0, color: TandemTokens.color_border),
-                      _infoTile('Daemon state', status.state),
-                      const Divider(height: 1.0, color: TandemTokens.color_border),
-                      _infoTile('Sync port', '${status.syncPort}'),
-                      const Divider(height: 1.0, color: TandemTokens.color_border),
-                      _infoTile('Discovery port', '${status.discoveryPort}'),
-                      const Divider(height: 1.0, color: TandemTokens.color_border),
-                      _infoTile(
-                        'Internet reachable',
-                        status.hasInternet ? 'Yes' : 'No (LAN / offline)',
-                      ),
-                    ],
-                  ),
+          Row(
+            children: [
+              Expanded(child: Text('Settings', style: t.pageTitleStyle)),
+              TandemButton(
+                label: 'Refresh daemon state',
+                variant: TandemButtonVariant.secondary,
+                onPressed: () => controller.refreshAll(),
+              ),
+            ],
           ),
           const SizedBox(height: TandemTokens.space_4),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TandemButton(
-              label: 'Refresh daemon state',
-              variant: TandemButtonVariant.secondary,
-              onPressed: () => controller.refreshAll(),
+          Text('Local daemon identity & ports', style: t.sectionTitleStyle),
+          const SizedBox(height: TandemTokens.space_2),
+          Divider(height: 1.0, color: t.border),
+          if (status == null)
+            Container(
+              width: double.infinity,
+              color: t.surface,
+              padding: const EdgeInsets.all(TandemTokens.space_4),
+              child: Text('Daemon status is not available yet.', style: t.bodyStyle),
+            )
+          else ...[
+            _infoRow(t, 'Device name', status.myDeviceName, mono: false),
+            _infoRow(t, 'Device ID', status.myDeviceId),
+            _infoRow(t, 'Daemon version', status.version),
+            _infoRow(
+              t,
+              'Daemon state',
+              status.state.isEmpty
+                  ? 'Unknown'
+                  : '${status.state[0].toUpperCase()}${status.state.substring(1)}',
+              mono: false,
             ),
-          ),
+            _infoRow(t, 'Sync port', '${status.syncPort}'),
+            _infoRow(t, 'Discovery port', '${status.discoveryPort}'),
+            _infoRow(
+              t,
+              'Internet reachable',
+              status.hasInternet ? 'Yes' : 'No (LAN / offline)',
+              mono: false,
+            ),
+          ],
         ],
       ),
+    );
+
+    if (embedded) {
+      return SingleChildScrollView(child: content);
+    }
+
+    return Scaffold(
+      backgroundColor: t.ground,
+      appBar: AppBar(
+        title: Text('Settings', style: t.sectionTitleStyle),
+        backgroundColor: t.surface,
+        foregroundColor: t.text,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(child: content),
     );
   }
 }

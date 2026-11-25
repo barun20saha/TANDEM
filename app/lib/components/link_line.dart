@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 
 enum LinkLineState {
@@ -9,75 +10,96 @@ enum LinkLineState {
   offline,
 }
 
-/// LinkLine: Signature visual connection element between devices (Section 5.1 & 8.3).
-/// Always paired with a text label. Never conveys state by color alone.
+/// LinkLine: The signature visual communication topology indicator (Section 8.1 & 8.3).
+/// Adapts strictly to light/dark theme and never conveys connection state by color alone.
 class LinkLine extends StatelessWidget {
   final LinkLineState state;
   final double length;
-  final bool isHorizontal;
+  final bool showLabel;
+  final String? customLabel;
 
   const LinkLine({
     Key? key,
     required this.state,
-    this.length = 80.0,
-    this.isHorizontal = true,
+    this.length = 64.0,
+    this.showLabel = true,
+    this.customLabel,
   }) : super(key: key);
 
-  String get labelText {
+  String get defaultLabel {
     switch (state) {
       case LinkLineState.directLocal:
         return 'Direct, same network';
       case LinkLineState.directInternet:
-        return 'Direct, over the internet';
+        return 'Direct, internet';
       case LinkLineState.relayed:
         return 'Through a relay (slower)';
       case LinkLineState.connecting:
         return 'Connecting';
       case LinkLineState.offline:
-        return 'Not reachable';
+        return 'Offline';
     }
   }
 
-  Color get lineColor {
+  Color _lineColor(TandemTheme t) {
     switch (state) {
       case LinkLineState.directLocal:
       case LinkLineState.directInternet:
-        return TandemTokens.color_link_direct;
+        return t.linkDirect;
       case LinkLineState.relayed:
-        return TandemTokens.color_link_relay;
+        return t.linkRelay;
       case LinkLineState.connecting:
-        return TandemTokens.color_border;
+        return t.border;
       case LinkLineState.offline:
         return TandemTokens.color_transparent;
     }
   }
 
+  Color _textColor(TandemTheme t) {
+    switch (state) {
+      case LinkLineState.directLocal:
+      case LinkLineState.directInternet:
+        return t.linkDirect;
+      case LinkLineState.relayed:
+        return t.linkRelayText;
+      case LinkLineState.connecting:
+      case LinkLineState.offline:
+        return t.mutedText;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Screen reader accessible semantic node
+    final t = TandemTheme.of(context);
+    final label = customLabel ?? defaultLabel;
+
     return Semantics(
-      label: 'Connection status: $labelText',
-      child: Column(
+      label: 'Connection status: $label',
+      child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CustomPaint(
-            size: isHorizontal ? Size(length, 4.0) : Size(4.0, length),
+            size: Size(length, 10.0),
             painter: _LinkLinePainter(
               state: state,
-              color: lineColor,
-              isHorizontal: isHorizontal,
+              color: _lineColor(t),
+              offlineStroke: t.border,
             ),
           ),
-          const SizedBox(height: TandemTokens.space_1),
-          Text(
-            labelText,
-            style: TandemTokens.text_xs.copyWith(
-              color: state == LinkLineState.relayed
-                  ? TandemTokens.color_link_relay_text
-                  : TandemTokens.color_text,
+          if (showLabel) ...[
+            const SizedBox(width: TandemTokens.space_2),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TandemTokens.text_xs.copyWith(
+                  color: _textColor(t),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -87,74 +109,69 @@ class LinkLine extends StatelessWidget {
 class _LinkLinePainter extends CustomPainter {
   final LinkLineState state;
   final Color color;
-  final bool isHorizontal;
+  final Color offlineStroke;
 
   _LinkLinePainter({
     required this.state,
     required this.color,
-    required this.isHorizontal,
+    required this.offlineStroke,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (state == LinkLineState.offline) return;
+    final cy = size.height / 2.0;
 
-    final paint = Paint()
+    if (state == LinkLineState.offline) {
+      final dotPaint = Paint()
+        ..color = offlineStroke
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke;
+      canvas.drawCircle(Offset(3.0, cy), 2.5, dotPaint);
+      canvas.drawCircle(Offset(size.width - 3.0, cy), 2.5, dotPaint);
+      return;
+    }
+
+    final linePaint = Paint()
       ..color = color
       ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
-    final start = isHorizontal ? Offset(0, size.height / 2) : Offset(size.width / 2, 0);
-    final end = isHorizontal ? Offset(size.width, size.height / 2) : Offset(size.width / 2, size.height);
+    final dotFill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
 
-    switch (state) {
-      case LinkLineState.directLocal:
-        // Solid line
-        canvas.drawLine(start, end, paint);
-        break;
+    canvas.drawCircle(Offset(2.5, cy), 2.5, dotFill);
+    canvas.drawCircle(Offset(size.width - 2.5, cy), 2.5, dotFill);
 
-      case LinkLineState.directInternet:
-        // Dashed line (6px dash, 4px gap)
-        _drawDashed(canvas, start, end, paint, dash: 6.0, gap: 4.0);
-        break;
+    const startX = 6.0;
+    final endX = size.width - 6.0;
 
-      case LinkLineState.relayed:
-        // Dotted line (2px dot, 4px gap)
-        _drawDashed(canvas, start, end, paint, dash: 2.0, gap: 4.0);
-        break;
-
-      case LinkLineState.connecting:
-        // Muted dashed line
-        paint.color = TandemTokens.color_border;
-        _drawDashed(canvas, start, end, paint, dash: 4.0, gap: 4.0);
-        break;
-
-      case LinkLineState.offline:
-        break;
-    }
-  }
-
-  void _drawDashed(Canvas canvas, Offset start, Offset end, Paint paint, {required double dash, required double gap}) {
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    final totalLen = (dx != 0) ? dx.abs() : dy.abs();
-
-    double current = 0;
-    while (current < totalLen) {
-      final segStart = isHorizontal
-          ? Offset(start.dx + current, start.dy)
-          : Offset(start.dx, start.dy + current);
-      final segLen = (current + dash > totalLen) ? totalLen - current : dash;
-      final segEnd = isHorizontal
-          ? Offset(segStart.dx + segLen, start.dy)
-          : Offset(start.dx, segStart.dy + segLen);
-
-      canvas.drawLine(segStart, segEnd, paint);
-      current += dash + gap;
+    if (state == LinkLineState.directLocal) {
+      canvas.drawLine(Offset(startX, cy), Offset(endX, cy), linePaint);
+    } else if (state == LinkLineState.directInternet ||
+        state == LinkLineState.connecting) {
+      const dashWidth = 6.0;
+      const dashGap = 4.0;
+      double x = startX;
+      while (x < endX) {
+        final next = (x + dashWidth).clamp(startX, endX);
+        canvas.drawLine(Offset(x, cy), Offset(next, cy), linePaint);
+        x += dashWidth + dashGap;
+      }
+    } else if (state == LinkLineState.relayed) {
+      const dotStep = 6.0;
+      double x = startX + 2.0;
+      while (x < endX) {
+        canvas.drawCircle(Offset(x, cy), 1.3, dotFill);
+        x += dotStep;
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _LinkLinePainter old) =>
-      old.state != state || old.color != color;
+  bool shouldRepaint(covariant _LinkLinePainter oldDelegate) =>
+      oldDelegate.state != state ||
+      oldDelegate.color != color ||
+      oldDelegate.offlineStroke != offlineStroke;
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import re
 import sys
@@ -6,6 +7,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_LIB = os.path.join(ROOT, "app", "lib")
 TOKENS_DART = os.path.join(APP_LIB, "theme", "tokens.dart")
+TOKENS_JSON = os.path.join(ROOT, "design", "tokens.json")
 DEV_DIR = os.path.join(APP_LIB, "dev")
 AUDIT_MD = os.path.join(ROOT, "design", "AUDIT.md")
 
@@ -17,6 +19,63 @@ FAKE_DATA_REGEX = re.compile(
     r"office\s+server|alice|maya|mock|fake|sample|dummy|lorem)\b",
     re.IGNORECASE,
 )
+
+
+def _srgb_channel(c_hex: str) -> float:
+    v = int(c_hex, 16) / 255.0
+    return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+
+
+def _rel_luminance(hex_color: str) -> float:
+    h = hex_color.lstrip("#")
+    r = _srgb_channel(h[0:2])
+    g = _srgb_channel(h[2:4])
+    b = _srgb_channel(h[4:6])
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast_ratio(fg: str, bg: str) -> float:
+    l1 = _rel_luminance(fg)
+    l2 = _rel_luminance(bg)
+    hi, lo = max(l1, l2), min(l1, l2)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def compute_contrast_rows():
+    with open(TOKENS_JSON, "r", encoding="utf-8") as fh:
+        tokens = json.load(fh)
+    light = {k: v["value"] for k, v in tokens["color"]["light"].items()}
+    dark = {k: v["value"] for k, v in tokens["color"]["dark"].items()}
+
+    checks = [
+        ("Light primary text on ground", light["color-text"], light["color-ground"], 4.5),
+        ("Light primary text on surface", light["color-text"], light["color-surface"], 4.5),
+        ("Light direct link on surface", light["color-link-direct"], light["color-surface"], 4.5),
+        ("Light on-primary on direct button", light["color-on-primary"], light["color-link-direct"], 4.5),
+        ("Light relay text on surface", light["color-link-relay-text"], light["color-surface"], 4.5),
+        ("Light relay line graphic on surface", light["color-link-relay"], light["color-surface"], 3.0),
+        ("Light ok status on surface", light["color-ok"], light["color-surface"], 4.5),
+        ("Light danger on surface", light["color-danger"], light["color-surface"], 4.5),
+        ("Light on-primary on danger button", light["color-on-primary"], light["color-danger"], 4.5),
+        ("Dark primary text on ground", dark["color-text"], dark["color-ground"], 4.5),
+        ("Dark primary text on surface", dark["color-text"], dark["color-surface"], 4.5),
+        ("Dark direct link on surface", dark["color-link-direct"], dark["color-surface"], 4.5),
+        ("Dark on-primary on direct button", dark["color-on-primary"], dark["color-link-direct"], 4.5),
+        ("Dark relay text on surface", dark["color-link-relay-text"], dark["color-surface"], 4.5),
+        ("Dark relay line graphic on surface", dark["color-link-relay"], dark["color-surface"], 3.0),
+        ("Dark ok status on surface", dark["color-ok"], dark["color-surface"], 4.5),
+        ("Dark danger on surface", dark["color-danger"], dark["color-surface"], 4.5),
+        ("Dark on-primary on danger button", dark["color-on-primary"], dark["color-danger"], 4.5),
+    ]
+    rows = []
+    failures = []
+    for name, fg, bg, req in checks:
+        ratio = contrast_ratio(fg, bg)
+        passed = ratio >= req
+        if not passed:
+            failures.append((name, fg, bg, ratio, req))
+        rows.append((name, fg, bg, ratio, req, passed))
+    return rows, failures
 
 
 def audit():
@@ -47,31 +106,39 @@ def audit():
                 if not stripped.startswith("//") and FAKE_DATA_REGEX.search(line):
                     fake_data_violations.append((rel, lineno, stripped))
 
+    contrast_rows, contrast_failures = compute_contrast_rows()
     total_violations = (
         len(color_violations)
         + len(material_color_violations)
         + len(fake_data_violations)
+        + len(contrast_failures)
     )
     score = "100.0%" if total_violations == 0 else "0.0%"
 
     report = [
         "# Design Token & Data Integrity Audit Report",
         "",
-        "Generated automatically by `design/audit.py`.",
+        "Generated automatically by `design/audit.py` from `design/tokens.json` and `app/lib/`.",
         "",
         "## Summary",
         f"- **Hard-coded color violations outside tokens.dart:** {len(color_violations)}",
         f"- **Material `Colors.*` usages outside tokens.dart:** {len(material_color_violations)}",
         f"- **Fake or placeholder data hits outside `app/lib/dev/`:** {len(fake_data_violations)}",
+        f"- **WCAG contrast failures (`tokens.json`):** {len(contrast_failures)}",
         f"- **Dart files scanned:** {len(dart_files)}",
         f"- **Overall Component Completeness Score:** {score}",
         "",
-        "## Contrast & Accessibility Check",
-        "- Verified primary text (`#1A1917` on `#F7F6F3` / `#FFFFFF`) meets >= 13:1 WCAG AAA.",
-        "- Dark mode text (`#EDECEA` on `#141413` / `#1E1D1B`) meets >= 13:1 WCAG AAA.",
-        "- Secondary semantic badges verified for >= 4.5:1 AA contrast.",
+        "## WCAG 2.1 Contrast Verification (`design/tokens.json`)",
         "",
+        "| Pair | Foreground | Background | Ratio | Required | Status |",
+        "|---|---|---|---|---|---|",
     ]
+    for name, fg, bg, ratio, req, passed in contrast_rows:
+        status = "PASS" if passed else "FAIL"
+        report.append(
+            f"| {name} | `{fg}` | `{bg}` | {ratio:.2f}:1 | >= {req:.1f}:1 | {status} |"
+        )
+    report.append("")
 
     if color_violations:
         report.append("## Hard-coded Color Violations")
@@ -97,7 +164,8 @@ def audit():
     print(
         f"Audit complete: {len(color_violations)} color violations, "
         f"{len(material_color_violations)} Colors.* violations, "
-        f"{len(fake_data_violations)} fake-data hits."
+        f"{len(fake_data_violations)} fake-data hits, "
+        f"{len(contrast_failures)} contrast failures."
     )
     if total_violations > 0:
         for group_name, items in (
@@ -107,6 +175,11 @@ def audit():
         ):
             for rel, ln, txt in items:
                 print(f"[{group_name}] {rel}:{ln}: {txt}", file=sys.stderr)
+        for name, fg, bg, ratio, req in contrast_failures:
+            print(
+                f"[contrast] {name} ({fg} on {bg}) = {ratio:.2f}:1 < {req:.1f}:1",
+                file=sys.stderr,
+            )
         return 1
     return 0
 

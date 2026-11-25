@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
+import 'buttons.dart';
 
 enum TransferState {
   sending,
@@ -10,11 +12,11 @@ enum TransferState {
   done,
 }
 
-/// TransferRow: Details an active or finished file transfer with real tabular figures (Section 8.3).
+/// TransferRow: Real-time transfer row with tabular speeds and link interface label.
 class TransferRow extends StatelessWidget {
   final String fileName;
   final TransferState state;
-  final double progress; // 0.0 to 1.0
+  final double progress;
   final String speedText;
   final String timeLeftText;
   final String interfaceUsed;
@@ -26,23 +28,59 @@ class TransferRow extends StatelessWidget {
     required this.fileName,
     required this.state,
     this.progress = 0.0,
-    this.speedText = '0 MB/s',
-    this.timeLeftText = 'calculating...',
-    this.interfaceUsed = 'Wi-Fi',
+    this.speedText = '0 B/s',
+    this.timeLeftText = '0 B',
+    this.interfaceUsed = 'direct-local',
     this.failureReason,
     this.onRetry,
   }) : super(key: key);
 
+  Color _progressColor(TandemTheme t) {
+    switch (state) {
+      case TransferState.failed:
+        return t.danger;
+      case TransferState.done:
+        return t.ok;
+      case TransferState.paused:
+      case TransferState.queued:
+        return t.border;
+      case TransferState.sending:
+      case TransferState.receiving:
+        return t.linkDirect;
+    }
+  }
+
+  String get _stateLabel {
+    switch (state) {
+      case TransferState.done:
+        return 'Done';
+      case TransferState.failed:
+        return 'Failed';
+      case TransferState.paused:
+        return 'Paused';
+      case TransferState.queued:
+        return 'Queued';
+      case TransferState.receiving:
+        return 'Receiving';
+      case TransferState.sending:
+        return 'Sending';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final t = TandemTheme.of(context);
+    final barColor = _progressColor(t);
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: TandemTokens.space_4,
         vertical: TandemTokens.space_3,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
+        color: t.surface,
         border: Border(
-          bottom: BorderSide(color: TandemTokens.color_border, width: 0.5),
+          bottom: BorderSide(color: t.border, width: 0.5),
         ),
       ),
       child: Column(
@@ -53,59 +91,79 @@ class TransferRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   fileName,
-                  style: TandemTokens.text_sm.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: t.bodyStyle.copyWith(fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: TandemTokens.space_3),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TandemTokens.space_2,
+                  vertical: 2.0,
+                ),
+                decoration: BoxDecoration(
+                  color: t.ground,
+                  borderRadius: BorderRadius.circular(TandemTokens.radius_control),
+                  border: Border.all(color: t.border, width: 0.5),
+                ),
+                child: Text(
+                  interfaceUsed,
+                  style: t.captionStyle.copyWith(fontFamily: 'monospace'),
+                ),
+              ),
+              const SizedBox(width: TandemTokens.space_3),
               Text(
-                state == TransferState.done
-                    ? 'Complete'
-                    : '$speedText · $timeLeftText',
-                style: TandemTokens.text_xs.copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  color: TandemTokens.color_text,
+                _stateLabel,
+                style: TandemTokens.text_sm.copyWith(
+                  color: barColor,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
           const SizedBox(height: TandemTokens.space_2),
-
-          // Linear progress bar
-          if (state == TransferState.sending || state == TransferState.receiving) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(TandemTokens.radius_control),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: TandemTokens.color_border,
-                valueColor: const AlwaysStoppedAnimation<Color>(TandemTokens.color_link_direct),
-                minHeight: 4.0,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2.0),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 4.0,
+              backgroundColor: t.border.withAlpha(80),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+          const SizedBox(height: TandemTokens.space_2),
+          Row(
+            children: [
+              Text(
+                speedText,
+                style: t.monoStyle.copyWith(fontSize: 12.0, color: t.mutedText),
               ),
-            ),
-            const SizedBox(height: TandemTokens.space_1),
-            Text(
-              'Via $interfaceUsed',
-              style: TandemTokens.text_xs.copyWith(
-                color: TandemTokens.color_text.withOpacity(0.6),
+              const Spacer(),
+              Text(
+                timeLeftText,
+                style: t.monoStyle.copyWith(fontSize: 12.0, color: t.mutedText),
               ),
-            ),
-          ],
-
-          if (state == TransferState.failed) ...[
-            Text(
-              failureReason ?? 'Transfer interrupted',
-              style: TandemTokens.text_xs.copyWith(color: TandemTokens.color_danger),
-            ),
-            if (onRetry != null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry transfer'),
+            ],
+          ),
+          if (state == TransferState.failed && failureReason != null) ...[
+            const SizedBox(height: TandemTokens.space_2),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    failureReason!,
+                    style: TandemTokens.text_sm.copyWith(color: t.danger),
+                  ),
                 ),
-              ),
+                if (onRetry != null)
+                  TandemButton(
+                    label: 'Retry transfer',
+                    variant: TandemButtonVariant.secondary,
+                    onPressed: onRetry,
+                  ),
+              ],
+            ),
           ],
         ],
       ),

@@ -29,7 +29,8 @@ This document catalogs every UI component, variants, lifecycle states, accessibi
   - `this-device`: Shows local hostname and `"This device"` badge.
   - `remote`: Shows remote device name, LinkLine status, sync state, and last-seen timestamp.
 - **States:** Default, Hover, Pressed, Focus, Disabled.
-- **Edge Cases:** Long device names truncate in the middle (e.g., `Barun’s Work Lapt...Special Edition`), preserving the beginning and end.
+- **Edge Cases:** Long device names truncate in the middle (e.g., `workstation-a...lab-backup`), preserving the beginning and end.
+- **Status Dot:** Mapped to link/sync state (`direct` -> `color-ok` or `color-link-direct`, `relayed` -> `color-link-relay`, `offline`/`connecting`/unpaired nearby -> `color-border`).
 - **Accessibility:** Minimum touch target height 48dp on mobile, 32px on desktop. Logical keyboard tab order.
 - **Do:** Keep list dense and scannable.
 - **Don't:** Render as a floating card with drop shadow.
