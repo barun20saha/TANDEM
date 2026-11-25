@@ -51,7 +51,7 @@ func NewServer(
 		cfg.BindAddr = "127.0.0.1:8385"
 	}
 	if cfg.Version == "" {
-		cfg.Version = "0.1.0-alpha"
+		cfg.Version = "0.2.0"
 	}
 
 	s := &Server{

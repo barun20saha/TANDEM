@@ -1,0 +1,34 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: Features
+      labels:
+        - enhancement
+        - feature
+    - title: Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: Platform & Packaging (Windows / macOS / Linux / Android)
+      labels:
+        - platform
+        - android
+        - windows
+        - macos
+        - linux
+        - packaging
+    - title: Security & Reliability
+      labels:
+        - security
+        - chaos
+    - title: CI/CD & Documentation
+      labels:
+        - ci
+        - documentation
+    - title: Other Changes
+      labels:
+        - "*"

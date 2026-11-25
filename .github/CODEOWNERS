@@ -1,0 +1,16 @@
+# Default owners for Tandem repository
+* @barun20saha
+
+# Core daemon, PAL adapters, and protocol layers
+/core/ @barun20saha
+/tests/ @barun20saha
+
+# Flutter UI and Design System
+/app/ @barun20saha
+/design/ @barun20saha
+
+# Release engineering, CI/CD, and packaging
+/.github/ @barun20saha
+/scripts/ @barun20saha
+/infra/ @barun20saha
+/VERSION @barun20saha

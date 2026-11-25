@@ -1,10 +1,14 @@
-name: Tandem CI & Release Automation
+name: Tandem CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'release/**' ]
   pull_request:
     branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   core-matrix:
@@ -22,6 +26,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache-dependency-path: core/go.sum
 
       - name: Run Core Test Suite
         working-directory: core
@@ -37,10 +42,17 @@ jobs:
         run: go test -v .
 
       - name: Build tandemd Binary
-        working-directory: core
-        env:
-          CGO_ENABLED: '0'
-        run: go build -v -o ../bin/tandemd_${{ matrix.os }} ./cmd/tandemd
+        shell: bash
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          COMMIT=$(git rev-parse --short HEAD)
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          EXT=""
+          if [ "${{ runner.os }}" = "Windows" ]; then EXT=".exe"; fi
+          cd core
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${DATE} -X main.channel=ci" \
+            -o "../bin/tandemd_${{ matrix.os }}${EXT}" ./cmd/tandemd
 
   design-audit:
     name: Design System Token Audit
@@ -54,6 +66,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Verify Version Sync
+        run: python3 scripts/bump_version.py
+
       - name: Run Design Token Audit
         run: python3 design/audit.py
 
@@ -63,7 +78,7 @@ jobs:
           grep -F "Overall Component Completeness Score:** 100.0%" design/AUDIT.md
 
   flutter-app:
-    name: Flutter App & Widget Tests
+    name: Flutter Analyze & Widget Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -73,10 +88,15 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
       - name: Install Dependencies
         working-directory: app
         run: flutter pub get
+
+      - name: Run Flutter Analyze
+        working-directory: app
+        run: flutter analyze
 
       - name: Run Flutter Widget Tests
         working-directory: app
@@ -89,10 +109,10 @@ jobs:
             exit 1
           }
 
-  packaging:
-    name: Build Standalone Packages
+  packaging-smoke:
+    name: Package Linux Artifacts (amd64 & arm64)
     runs-on: ubuntu-latest
-    needs: [core-matrix, design-audit]
+    needs: [core-matrix, design-audit, flutter-app]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -102,12 +122,17 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Build Debian Package
-        run: bash scripts/package_deb.sh
+      - name: Build Debian & Tarball Packages
+        run: |
+          chmod +x scripts/package_deb.sh
+          ARCH=amd64 bash scripts/package_deb.sh
+          ARCH=arm64 bash scripts/package_deb.sh
 
-      - name: Upload Debian Package
+      - name: Upload Linux Packages
         uses: actions/upload-artifact@v4
         with:
-          name: tandem-debian-package
-          path: bin/*.deb
+          name: tandem-linux-ci-packages
+          path: |
+            bin/*.deb
+            bin/*.tar.gz
           if-no-files-found: error

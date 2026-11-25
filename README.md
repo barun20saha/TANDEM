@@ -1,5 +1,9 @@
 # Tandem
 
+[![CI](https://github.com/barun20saha/TANDEM/actions/workflows/ci.yml/badge.svg)](https://github.com/barun20saha/TANDEM/actions/workflows/ci.yml)
+[![Release](https://github.com/barun20saha/TANDEM/actions/workflows/release.yml/badge.svg)](https://github.com/barun20saha/TANDEM/actions/workflows/release.yml)
+[![Security](https://github.com/barun20saha/TANDEM/actions/workflows/security.yml/badge.svg)](https://github.com/barun20saha/TANDEM/actions/workflows/security.yml)
+
 > One app that sends files, photos, and folders between nearby devices with **no internet**, and keeps a folder identical across all your devices, anywhere in the world, over a **direct encrypted peer-to-peer link**.
 
 ---

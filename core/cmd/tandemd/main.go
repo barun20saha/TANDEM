@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -21,16 +22,40 @@ import (
 	"tandem/core/pairing"
 )
 
+// Build metadata injected via -ldflags at release build time.
+var (
+	version   = "0.2.0"
+	commit    = "dev"
+	buildDate = "unknown"
+	channel   = "stable"
+)
+
 func main() {
 	configDirFlag := flag.String("config", "", "Path to Tandem configuration directory")
 	apiBindFlag := flag.String("bind", "127.0.0.1:8385", "Local API loopback bind address")
 	autostartFlag := flag.Bool("autostart", false, "Enable system autostart on login and exit")
 	versionFlag := flag.Bool("version", false, "Print version and exit")
+	versionJSONFlag := flag.Bool("version-json", false, "Print structured build metadata as JSON and exit")
 	flag.Parse()
 
-	version := "0.1.0-alpha"
+	if *versionJSONFlag {
+		payload := map[string]string{
+			"version":   version,
+			"commit":    commit,
+			"buildDate": buildDate,
+			"channel":   channel,
+			"os":        runtime.GOOS,
+			"arch":      runtime.GOARCH,
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(payload)
+		return
+	}
+
 	if *versionFlag {
-		fmt.Printf("tandemd %s (%s/%s)\n", version, runtime.GOOS, runtime.GOARCH)
+		fmt.Printf("tandemd %s (%s/%s, channel=%s, commit=%s, built=%s)\n",
+			version, runtime.GOOS, runtime.GOARCH, channel, commit, buildDate)
 		return
 	}
 
