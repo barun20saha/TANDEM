@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../components/buttons.dart';
 import '../components/device_row.dart';
+import '../components/tandem_logo.dart';
 import '../models/models.dart';
 import '../state/tandem_controller.dart';
 import '../theme/tandem_theme.dart';
@@ -245,7 +246,15 @@ class _HomeShellState extends State<HomeShell> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Tandem', style: t.pageTitleStyle),
+                        Row(
+                          children: [
+                            const TandemLogo(size: 26.0),
+                            const SizedBox(width: TandemTokens.space_2),
+                            Expanded(
+                              child: Text('Tandem', style: t.pageTitleStyle),
+                            ),
+                          ],
+                        ),
                         if (status != null) ...[
                           const SizedBox(height: 2.0),
                           Text(
@@ -422,7 +431,14 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       backgroundColor: t.ground,
       appBar: AppBar(
-        title: Text('Tandem', style: t.sectionTitleStyle),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const TandemLogo(size: 22.0),
+            const SizedBox(width: TandemTokens.space_2),
+            Text('Tandem', style: t.sectionTitleStyle),
+          ],
+        ),
         backgroundColor: t.surface,
         foregroundColor: t.text,
         elevation: 0,

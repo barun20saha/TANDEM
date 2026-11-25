@@ -13,7 +13,7 @@ on:
       stage:
         description: 'Release stage (A=Linux only, B=Desktop, C=All incl Android)'
         required: false
-        default: 'A'
+        default: 'B'
         type: choice
         options: [ 'A', 'B', 'C' ]
 
@@ -50,7 +50,7 @@ jobs:
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-          echo "stage=${{ inputs.stage || 'A' }}" >> "$GITHUB_OUTPUT"
+          echo "stage=${{ inputs.stage || 'B' }}" >> "$GITHUB_OUTPUT"
 
   test:
     uses: ./.github/workflows/test.yml
@@ -118,12 +118,12 @@ jobs:
         with:
           subject-path: 'release-assets/*'
 
-      - name: Create Draft GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           name: Tandem ${{ needs.prepare.outputs.tag }}
-          draft: true
+          draft: false
           prerelease: true
           generate_release_notes: true
           files: release-assets/*

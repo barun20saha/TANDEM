@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-26
+
 ### Added
-- Staged CI/CD workflows (`.github/workflows/test.yml`, `build-linux.yml`, `build-windows.yml`, `build-macos.yml`, `build-android.yml`, `release.yml`) with clean-container Linux `.deb` smoke tests and `apksigner` debug-key rejection checks.
+- Replaced Tandem brand mark and application icons across `design/tandem.svg`, `design/tandem.png`, `site/index.html`, `site/favicon.svg`, `README.md`, Flutter UI (`TandemLogo`), macOS `AppIcon.appiconset`, Windows `app_icon.ico`, and Android `mipmap-*/ic_launcher.png` + adaptive icon resources using the new Harbor Navy (`#1E3A4F`), Direct Blue (`#2358D6`), and Mist (`#E8ECEF`) interlocking mark.
+- Staged CI/CD workflows (`.github/workflows/test.yml`, `build-linux.yml`, `build-windows.yml`, `build-macos.yml`, `build-android.yml`, `release.yml`) with clean-container Linux `.deb` smoke tests, Windows installer/firewall/daemon health checks, macOS universal `.dmg` verification, and `apksigner` debug-key rejection checks.
 - Developer setup and full Stage A verification scripts (`scripts/setup_dev.sh`, `scripts/verify_all.sh`).
 - OpenAPI contract parity tests in Go (`core/api/contract_test.go`) and Dart (`app/test/openapi_contract_test.dart`, `app/test/openapi_mock_validator.dart`), plus loopback/pairing security tests (`core/api/security_test.go`).
 - Flutter desktop runner scaffolds (`linux`, `windows`, `macos`), `app/integration_test/app_live_test.dart`, and `app/test/live_daemon_ui_test.dart` capturing real two-daemon live screenshots under `design/screenshots/live/`.

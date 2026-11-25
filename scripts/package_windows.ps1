@@ -1,6 +1,6 @@
 # Windows Distribution Packaging Script (.zip portable + Inno Setup .exe installer)
 Param(
-    [string]$Version = "0.2.3",
+    [string]$Version = "0.3.0",
     [string]$Arch = "amd64",
     [string]$Channel = "stable",
     [string]$OutDir = "",

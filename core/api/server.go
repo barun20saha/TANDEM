@@ -79,7 +79,7 @@ func NewServer(
 		cfg.BindAddr = "127.0.0.1:8385"
 	}
 	if cfg.Version == "" {
-		cfg.Version = "0.2.3"
+		cfg.Version = "0.3.0"
 	}
 	if cfg.SyncPort == 0 {
 		cfg.SyncPort = 22000

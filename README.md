@@ -1,4 +1,4 @@
-# Tandem
+# <img src="design/tandem.svg" width="36" height="36" alt="Tandem logo" valign="middle" /> Tandem
 
 [![CI](https://github.com/barun20saha/TANDEM/actions/workflows/ci.yml/badge.svg)](https://github.com/barun20saha/TANDEM/actions/workflows/ci.yml)
 [![Release](https://github.com/barun20saha/TANDEM/actions/workflows/release.yml/badge.svg)](https://github.com/barun20saha/TANDEM/actions/workflows/release.yml)

@@ -1,9 +1,9 @@
 ; Tandem Windows Inno Setup Installer Script
 #ifndef AppVersion
-  #define AppVersion "0.2.3"
+  #define AppVersion "0.3.0"
 #endif
 #ifndef CoreVersion
-  #define CoreVersion "0.2.3"
+  #define CoreVersion "0.3.0"
 #endif
 #ifndef Arch
   #define Arch "amd64"

@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEFAULT_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
-VERSION="${VERSION:-0.2.3}"
+VERSION="${VERSION:-0.3.0}"
 CORE_VERSION="${VERSION%%-*}"
 ARCH="${ARCH:-amd64}"
 CHANNEL="${CHANNEL:-stable}"

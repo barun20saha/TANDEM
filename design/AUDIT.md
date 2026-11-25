@@ -7,7 +7,7 @@ Generated automatically by `design/audit.py` from `design/tokens.json` and `app/
 - **Material `Colors.*` usages outside tokens.dart:** 0
 - **Fake or placeholder data hits outside `app/lib/dev/`:** 0
 - **WCAG contrast failures (`tokens.json`):** 0
-- **Dart files scanned:** 30
+- **Dart files scanned:** 31
 - **Overall Component Completeness Score:** 100.0%
 
 ## WCAG 2.1 Contrast Verification (`design/tokens.json`)

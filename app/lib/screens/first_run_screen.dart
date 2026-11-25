@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/buttons.dart';
+import '../components/tandem_logo.dart';
 import '../theme/tandem_theme.dart';
 import '../theme/tokens.dart';
 
@@ -57,14 +58,20 @@ class FirstRunScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Tandem',
-                style: TandemTokens.text_2xl.copyWith(
-                  fontSize: t.isDesktop ? 30.0 : 26.0,
-                  fontWeight: FontWeight.w700,
-                  color: t.text,
-                  letterSpacing: -0.5,
-                ),
+              Row(
+                children: [
+                  const TandemLogo(size: 36.0),
+                  const SizedBox(width: TandemTokens.space_3),
+                  Text(
+                    'Tandem',
+                    style: TandemTokens.text_2xl.copyWith(
+                      fontSize: t.isDesktop ? 30.0 : 26.0,
+                      fontWeight: FontWeight.w700,
+                      color: t.text,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: TandemTokens.space_2),
               Text(
