@@ -24,6 +24,10 @@ void main() {
       'go',
       ['build', '-o', binPath, './cmd/tandemd'],
       workingDirectory: '../core',
+      environment: {
+        ...Platform.environment,
+        'CGO_ENABLED': '0',
+      },
     );
     expect(buildRes.exitCode, 0, reason: buildRes.stderr.toString());
 
@@ -108,17 +112,31 @@ void main() {
       addressHint: 'tcp://127.0.0.1:25200',
     );
     await clientA.addFolder(
+      id: 'live-shared',
       path: syncA.path,
       label: 'LiveSync',
       sharedDevices: [statusB.myDeviceId],
     );
     final foldersA = await clientA.getFolders();
     await clientB.addFolder(
+      id: 'live-shared',
       path: syncB.path,
       label: 'LiveSync',
       sharedDevices: [statusA.myDeviceId],
     );
-    // Use same folder id via direct status refresh
+
+    final syncedFile = File('${syncB.path}/hello.txt');
+    final syncDeadline = DateTime.now().add(const Duration(seconds: 45));
+    while (DateTime.now().isBefore(syncDeadline)) {
+      if (syncedFile.existsSync() &&
+          syncedFile.readAsStringSync() == 'live-integration-sync') {
+        break;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+    expect(syncedFile.existsSync(), isTrue);
+    expect(syncedFile.readAsStringSync(), 'live-integration-sync');
+
     expect(foldersA, isNotEmpty);
     await ctrlA.refreshAll();
     await tester.pumpAndSettle();

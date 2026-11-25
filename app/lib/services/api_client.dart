@@ -85,6 +85,7 @@ class ApiClient {
   }
 
   Future<TandemFolder> addFolder({
+    String? id,
     required String path,
     String? label,
     String type = 'sendreceive',
@@ -94,6 +95,7 @@ class ApiClient {
       Uri.parse('$baseUrl/folders'),
       headers: _headers,
       body: json.encode({
+        if (id != null && id.isNotEmpty) 'id': id,
         'path': path,
         if (label != null && label.isNotEmpty) 'label': label,
         'type': type,

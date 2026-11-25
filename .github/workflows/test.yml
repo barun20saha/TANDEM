@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: 'stable'
           cache: false
 
       - name: Go vet and unit tests (-race)
@@ -87,7 +87,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: 'stable'
           cache: false
 
       - name: Set up Flutter

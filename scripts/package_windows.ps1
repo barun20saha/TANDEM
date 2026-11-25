@@ -38,11 +38,15 @@ $LdFlags = "-s -w -X main.version=$Version -X main.commit=$CommitSha -X main.bui
 
 Write-Host "Building tandemd.exe $Version for windows/$Arch..."
 Push-Location (Join-Path $RepoRoot "core")
-$env:CGO_ENABLED = "0"
-$env:GOOS = "windows"
-$env:GOARCH = $Arch
-go build -trimpath -ldflags $LdFlags -o $ExePath ./cmd/tandemd
-Pop-Location
+try {
+    $env:CGO_ENABLED = "0"
+    $env:GOOS = "windows"
+    $env:GOARCH = $Arch
+    go build -trimpath -ldflags $LdFlags -o $ExePath ./cmd/tandemd
+    if ($LASTEXITCODE -ne 0) { throw "go build failed with exit code $LASTEXITCODE" }
+} finally {
+    Pop-Location
+}
 
 if ($FlutterBundleDir -and (Test-Path $FlutterBundleDir)) {
     Write-Host "Copying Flutter Windows release bundle from $FlutterBundleDir..."
@@ -57,19 +61,19 @@ Copy-Item (Join-Path $RepoRoot "README.md") -Destination $StageDir
 Copy-Item (Join-Path $RepoRoot "LICENSE") -Destination $StageDir
 Copy-Item (Join-Path $RepoRoot "THIRD_PARTY_NOTICES.md") -Destination $StageDir
 
-$FirewallScript = @"
+$FirewallScript = @'
 # Run as Administrator to open Tandem P2P ports in Windows Defender Firewall (bound to tandemd.exe)
 $DaemonPath = Join-Path $PSScriptRoot "tandemd.exe"
 New-NetFirewallRule -DisplayName "Tandem Sync (TCP 22000)" -Direction Inbound -Program $DaemonPath -Protocol TCP -LocalPort 22000 -Action Allow -ErrorAction SilentlyContinue | Out-Null
 New-NetFirewallRule -DisplayName "Tandem Sync (UDP 22000)" -Direction Inbound -Program $DaemonPath -Protocol UDP -LocalPort 22000 -Action Allow -ErrorAction SilentlyContinue | Out-Null
 New-NetFirewallRule -DisplayName "Tandem Local Discovery (UDP 21027)" -Direction Inbound -Program $DaemonPath -Protocol UDP -LocalPort 21027 -Action Allow -ErrorAction SilentlyContinue | Out-Null
 Write-Host "Tandem Windows Firewall rules installed."
-"@
+'@
 Set-Content -Path (Join-Path $StageDir "install-firewall.ps1") -Value $FirewallScript -Encoding UTF8
 
-$UninstallFirewallScript = @"
+$UninstallFirewallScript = @'
 Remove-NetFirewallRule -DisplayName "Tandem*" -ErrorAction SilentlyContinue | Out-Null
-"@
+'@
 Set-Content -Path (Join-Path $StageDir "uninstall-firewall.ps1") -Value $UninstallFirewallScript -Encoding UTF8
 
 # 1. Portable ZIP bundle
@@ -93,6 +97,7 @@ if ($Iscc) {
     $IssFile = Join-Path $PSScriptRoot "tandem_installer.iss"
     Write-Host "Building Windows .exe installer using $Iscc..."
     & $Iscc "/DAppVersion=$Version" "/DCoreVersion=$CoreVersion" "/DArch=$Arch" "/DStageDir=$StageDir" "/DOutDir=$OutDir" $IssFile
+    if ($LASTEXITCODE -ne 0) { throw "ISCC.exe failed with exit code $LASTEXITCODE" }
     $SetupExe = Join-Path $OutDir "tandem-$Version-windows-$Arch-setup.exe"
     if (Test-Path $SetupExe) {
         Write-Host "Created Windows installer at $SetupExe"
@@ -100,11 +105,15 @@ if ($Iscc) {
         if ($env:WINDOWS_CERT_PFX_BASE64 -and $env:WINDOWS_CERT_PASSWORD) {
             $PfxPath = Join-Path ([System.IO.Path]::GetTempPath()) "tandem-codesign.pfx"
             [IO.File]::WriteAllBytes($PfxPath, [Convert]::FromBase64String($env:WINDOWS_CERT_PFX_BASE64))
-            $SignTool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue | Select-Object -Last 1
-            if ($SignTool) {
-                & $SignTool.FullName sign /f $PfxPath /p $env:WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 $SetupExe
+            try {
+                $SignTool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue | Select-Object -Last 1
+                if ($SignTool) {
+                    & $SignTool.FullName sign /f $PfxPath /p $env:WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 $SetupExe
+                    if ($LASTEXITCODE -ne 0) { throw "signtool.exe failed with exit code $LASTEXITCODE" }
+                }
+            } finally {
+                Remove-Item -Force $PfxPath -ErrorAction SilentlyContinue
             }
-            Remove-Item -Force $PfxPath -ErrorAction SilentlyContinue
         }
     }
 } else {

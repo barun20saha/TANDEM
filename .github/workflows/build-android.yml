@@ -3,7 +3,6 @@ name: Build Android (Stage C)
 on:
   push:
     branches: [ main, 'release/**' ]
-    tags: [ 'v*' ]
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -11,54 +10,89 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: build-android-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
   build-android:
     name: Build & Verify Signed Android APK/AAB
+    if: github.event_name != 'pull_request' || github.actor != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     steps:
+      - name: Check Android release signing secrets
+        id: signing
+        env:
+          HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+        run: |
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            if [ "${{ github.event_name }}" = "workflow_call" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+              echo "::error::Missing required Android release signing secrets (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)."
+              exit 1
+            fi
+            echo "::warning::Skipping Stage C Android release build on branch push because ANDROID_KEYSTORE_* secrets are not configured yet."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
+        if: steps.signing.outputs.enabled == 'true'
         uses: actions/checkout@v4
 
       - name: Set up Java 17
+        if: steps.signing.outputs.enabled == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Set up Go
+        if: steps.signing.outputs.enabled == 'true'
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: 'stable'
           cache: false
 
       - name: Set up Flutter
+        if: steps.signing.outputs.enabled == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
       - name: Install Android NDK
+        if: steps.signing.outputs.enabled == 'true'
         run: |
-          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;27.2.12479018" "build-tools;35.0.0"
+          set +o pipefail
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          set -o pipefail
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;27.2.12479018" "build-tools;35.0.0"
 
-      - name: Decode release keystore (non-fork only)
-        if: github.event.pull_request.head.repo.fork != true && env.HAS_KEYSTORE == 'true'
+      - name: Decode release keystore
+        if: steps.signing.outputs.enabled == 'true'
         env:
-          HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/tandem-release.jks
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n' | base64 -d > /tmp/tandem-release.jks
+          chmod 600 /tmp/tandem-release.jks
+          if [ ! -s /tmp/tandem-release.jks ]; then
+            echo "::error::Decoded /tmp/tandem-release.jks is empty"
+            exit 1
+          fi
           cat << EOF > app/android/key.properties
           storePassword=${ANDROID_KEYSTORE_PASSWORD}
           keyPassword=${ANDROID_KEY_PASSWORD}
           keyAlias=${ANDROID_KEY_ALIAS}
           storeFile=/tmp/tandem-release.jks
           EOF
+          chmod 600 app/android/key.properties
 
       - name: Package Android Sideload & Play Builds
+        if: steps.signing.outputs.enabled == 'true'
         env:
           OUT_DIR: ${{ github.workspace }}/dist
         run: |
@@ -73,9 +107,7 @@ jobs:
         run: rm -f /tmp/tandem-release.jks app/android/key.properties
 
       - name: Verify release APK signing (fail if Android Debug)
-        if: github.event.pull_request.head.repo.fork != true
-        env:
-          HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: steps.signing.outputs.enabled == 'true'
         run: |
           APKSIGNER=$(ls "${ANDROID_HOME}/build-tools/"*/apksigner | sort -V | tail -n 1)
           for apk in dist/*.apk; do
@@ -87,6 +119,7 @@ jobs:
           done
 
       - name: Upload Android Artifacts
+        if: steps.signing.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dist-android

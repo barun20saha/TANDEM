@@ -3,7 +3,6 @@ name: Build & Smoke Test Windows
 on:
   push:
     branches: [ main, 'release/**' ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_call:
@@ -12,9 +11,14 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
   build-windows:
     name: Build & Smoke Test Windows (.exe setup & .zip)
+    if: github.event_name != 'pull_request' || github.actor != 'dependabot[bot]'
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -23,7 +27,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: 'stable'
           cache: false
 
       - name: Set up Flutter
@@ -76,16 +80,55 @@ jobs:
           & .\scripts\package_windows.ps1 -Version "$Version" -Arch "amd64" -OutDir $OutDir -FlutterBundleDir $FlutterBundle -SyncthingBin "C:\tools\syncthing-amd64.exe"
           & .\scripts\package_windows.ps1 -Version "$Version" -Arch "arm64" -OutDir $OutDir -SyncthingBin "C:\tools\syncthing-arm64.exe"
 
-      - name: Silent-install smoke test, firewall rules & two-instance sync
+      - name: Silent-install smoke test, firewall rules & daemon health
         shell: pwsh
         run: |
           $SetupExe = (Get-ChildItem dist\*-windows-amd64-setup.exe | Select-Object -First 1).FullName
-          Start-Process -FilePath $SetupExe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
-          $InstalledDaemon = "${env:ProgramFiles}\Tandem\tandemd.exe"
+          if (-not $SetupExe) { throw "Windows amd64 installer missing" }
+          $proc = Start-Process -FilePath $SetupExe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Installer exited with code $($proc.ExitCode)" }
+          $InstallDir = "${env:ProgramFiles}\Tandem"
+          $InstalledDaemon = Join-Path $InstallDir "tandemd.exe"
+          $InstalledSyncthing = Join-Path $InstallDir "syncthing.exe"
           if (-not (Test-Path $InstalledDaemon)) { throw "tandemd.exe missing after silent install" }
+          if (-not (Test-Path $InstalledSyncthing)) { throw "syncthing.exe missing after silent install" }
           & $InstalledDaemon -version
+          if ($LASTEXITCODE -ne 0) { throw "tandemd.exe -version failed with exit code $LASTEXITCODE" }
           $rules = Get-NetFirewallRule -DisplayName "Tandem*"
           if ($rules.Count -lt 3) { throw "Expected Tandem firewall rules after install" }
+          $appFilters = $rules | Get-NetFirewallApplicationFilter
+          if (-not ($appFilters | Where-Object { $_.Program -like "*tandemd.exe" })) {
+            throw "Expected firewall rules bound to tandemd.exe"
+          }
+          $CfgDir = Join-Path $env:TEMP "tandem-win-smoke"
+          if (Test-Path $CfgDir) { Remove-Item -Recurse -Force $CfgDir }
+          New-Item -ItemType Directory -Force -Path $CfgDir | Out-Null
+          $Env:PATH = "$InstallDir;$Env:PATH"
+          $DaemonProc = Start-Process -FilePath $InstalledDaemon -ArgumentList "-config", $CfgDir, "-bind", "127.0.0.1:18385", "-sync-port", "24200", "-discovery-port", "24127", "-engine-gui", "127.0.0.1:18384", "-device-name", "WinSmoke", "-global-discovery=false", "-relays=false", "-nat=false" -PassThru
+          try {
+            $Ready = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              $KeyFile = Join-Path $CfgDir "api.key"
+              if (Test-Path $KeyFile) {
+                $ApiKey = (Get-Content $KeyFile -Raw).Trim()
+                try {
+                  $Health = Invoke-RestMethod -Uri "http://127.0.0.1:18385/api/v1/health" -Headers @{ Authorization = "Bearer $ApiKey" } -TimeoutSec 2
+                  if ($Health.engineReady) {
+                    $Ready = $true
+                    break
+                  }
+                } catch {}
+              }
+              Start-Sleep -Milliseconds 500
+            }
+            if (-not $Ready) { throw "Installed Windows daemon failed to become healthy" }
+            Write-Host "WINDOWS_INSTALLED_HEALTHY"
+          } finally {
+            if ($DaemonProc -and -not $DaemonProc.HasExited) {
+              Stop-Process -Id $DaemonProc.Id -Force -ErrorAction SilentlyContinue
+            }
+            Get-Process -Name "syncthing" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
