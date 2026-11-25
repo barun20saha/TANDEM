@@ -97,12 +97,12 @@ jobs:
           cache: true
 
       - name: Fetch pinned Syncthing v2.1.7
-        run: python3 scripts/fetch_syncthing.py --os linux --arch amd64 --out /tmp/tools/syncthing
+        run: |
+          python3 scripts/fetch_syncthing.py --os linux --arch amd64 --out /tmp/tools/syncthing
+          echo "/tmp/tools" >> "$GITHUB_PATH"
 
       - name: Run Flutter analyze and full test suite (including live two-daemon UI)
         working-directory: app
-        env:
-          PATH: /tmp/tools:${{ env.PATH }}
         run: |
           flutter pub get
           flutter analyze --no-fatal-infos
