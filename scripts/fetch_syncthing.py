@@ -113,17 +113,46 @@ def main() -> int:
 
         if archive.endswith(".tar.gz"):
             with tarfile.open(archive, "r:gz") as tf:
-                member = next(m for m in tf.getmembers() if m.name.endswith("/" + bin_name))
+                member = next(
+                    (
+                        m
+                        for m in tf.getmembers()
+                        if m.isfile()
+                        and len(m.name.strip("/").split("/")) == 2
+                        and m.name.strip("/").split("/")[1] == bin_name
+                    ),
+                    None,
+                )
+                if member is None or member.size < 5 * 1024 * 1024:
+                    raise RuntimeError(
+                        f"Expected top-level {bin_name} binary missing or too small in {archive}"
+                    )
                 with tf.extractfile(member) as src, open(out_path, "wb") as dst:
                     shutil.copyfileobj(src, dst)
         else:
             with zipfile.ZipFile(archive, "r") as zf:
-                member = next(n for n in zf.namelist() if n.endswith("/" + bin_name))
-                with zf.open(member) as src, open(out_path, "wb") as dst:
+                info = next(
+                    (
+                        i
+                        for i in zf.infolist()
+                        if not i.is_dir()
+                        and len(i.filename.strip("/").split("/")) == 2
+                        and i.filename.strip("/").split("/")[1] == bin_name
+                    ),
+                    None,
+                )
+                if info is None or info.file_size < 5 * 1024 * 1024:
+                    raise RuntimeError(
+                        f"Expected top-level {bin_name} binary missing or too small in {archive}"
+                    )
+                with zf.open(info) as src, open(out_path, "wb") as dst:
                     shutil.copyfileobj(src, dst)
 
     os.chmod(out_path, 0o755)
-    print(f"Installed pinned Syncthing {SYNCTHING_VERSION} at {out_path}")
+    size_bytes = os.path.getsize(out_path)
+    if size_bytes < 5 * 1024 * 1024:
+        raise RuntimeError(f"Extracted {out_path} is unexpectedly small ({size_bytes} bytes)")
+    print(f"Installed pinned Syncthing {SYNCTHING_VERSION} at {out_path} ({size_bytes} bytes)")
     return 0
 
 
