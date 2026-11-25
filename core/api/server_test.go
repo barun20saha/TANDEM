@@ -77,16 +77,27 @@ func TestLocalAPIEndpoints(t *testing.T) {
 	baseURL := "http://" + actualAddr + "/api/v1"
 	client := &http.Client{Timeout: 2 * time.Second}
 
-	// 1. Test unauthorized request
+	// 1. Test unauthorized request (missing key and wrong key)
 	t.Run("AuthRequired", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, baseURL+"/status", nil)
 		resp, err := client.Do(req)
 		if err != nil {
 			t.Fatalf("request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		resp.Body.Close()
 		if resp.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected 401 Unauthorized, got: %d", resp.StatusCode)
+			t.Errorf("expected 401 Unauthorized without key, got: %d", resp.StatusCode)
+		}
+
+		req2, _ := http.NewRequest(http.MethodGet, baseURL+"/status", nil)
+		req2.Header.Set("Authorization", "Bearer wrong-secret-key")
+		resp2, err := client.Do(req2)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		resp2.Body.Close()
+		if resp2.StatusCode != http.StatusUnauthorized {
+			t.Errorf("expected 401 Unauthorized with wrong key, got: %d", resp2.StatusCode)
 		}
 	})
 

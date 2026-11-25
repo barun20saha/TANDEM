@@ -1,0 +1,23 @@
+=== RUN   TestE2E_BootAndAuth
+--- PASS: TestE2E_BootAndAuth (2.51s)
+=== RUN   TestE2E_Discover
+--- PASS: TestE2E_Discover (2.23s)
+=== RUN   TestE2E_PairAndSync1GBAnd1000Files
+MATCH
+--- PASS: TestE2E_PairAndSync1GBAnd1000Files (16.82s)
+=== RUN   TestE2E_EditDeleteAndTrashRestore
+--- PASS: TestE2E_EditDeleteAndTrashRestore (9.82s)
+=== RUN   TestE2E_Conflict
+--- PASS: TestE2E_Conflict (7.07s)
+=== RUN   TestE2E_FilenamesAndWarnings
+--- PASS: TestE2E_FilenamesAndWarnings (3.46s)
+=== RUN   TestE2E_Kill9Resume
+--- PASS: TestE2E_Kill9Resume (8.83s)
+=== RUN   TestE2E_DiskFull
+--- PASS: TestE2E_DiskFull (4.62s)
+=== RUN   TestE2E_NoInternet
+--- PASS: TestE2E_NoInternet (3.47s)
+=== RUN   TestE2E_SendAndLinkStateSSE
+--- PASS: TestE2E_SendAndLinkStateSSE (3.47s)
+PASS
+ok  	tandem/tests/e2e	62.719s

@@ -182,7 +182,80 @@ paths:
         '204':
           description: Folder removed from sync
 
+  /folders/{folderId}/errors:
+    get:
+      summary: List folder sync errors, disk-full warnings, and cross-OS name/conflict warnings
+      operationId: getFolderErrors
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FolderError'
+
+  /folders/{folderId}/trash:
+    get:
+      summary: List recoverable deleted/overwritten files in .tandem-trash
+      operationId: listFolderTrash
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrashItem'
+
+  /folders/{folderId}/trash/restore:
+    post:
+      summary: Restore a file from .tandem-trash back to its original path
+      operationId: restoreFolderTrash
+      parameters:
+        - name: folderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trashId]
+              properties:
+                trashId:
+                  type: string
+      responses:
+        '200':
+          description: Restored
+
   /send:
+    get:
+      summary: List active and recent Send sessions
+      operationId: listSendSessions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SendSession'
     post:
       summary: Initiate an ephemeral Send session (one-off transfer)
       operationId: initiateSend
@@ -524,3 +597,35 @@ components:
           type: string
         remediation:
           type: string
+
+    FolderError:
+      type: object
+      required:
+        - code
+        - path
+        - message
+      properties:
+        code:
+          type: string
+        path:
+          type: string
+        message:
+          type: string
+
+    TrashItem:
+      type: object
+      required:
+        - trashId
+        - originalPath
+        - deletedAt
+        - sizeBytes
+      properties:
+        trashId:
+          type: string
+        originalPath:
+          type: string
+        deletedAt:
+          type: string
+          format: date-time
+        sizeBytes:
+          type: integer

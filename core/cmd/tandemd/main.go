@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"tandem/core/api"
+	"tandem/core/discovery"
 	"tandem/core/engine"
 	"tandem/core/linkmanager"
 	"tandem/core/pal"
@@ -20,6 +21,7 @@ import (
 	"tandem/core/pal_linux"
 	"tandem/core/pal_windows"
 	"tandem/core/pairing"
+	"tandem/core/send"
 )
 
 // Build metadata injected via -ldflags at release build time.
@@ -33,6 +35,16 @@ var (
 func main() {
 	configDirFlag := flag.String("config", "", "Path to Tandem configuration directory")
 	apiBindFlag := flag.String("bind", "127.0.0.1:8385", "Local API loopback bind address")
+	syncPortFlag := flag.Int("sync-port", 22000, "BEP TCP/QUIC sync listen port")
+	discoveryPortFlag := flag.Int("discovery-port", 21027, "UDP local discovery port")
+	engineGUIFlag := flag.String("engine-gui", "127.0.0.1:8384", "Internal Syncthing REST loopback address")
+	syncthingBinFlag := flag.String("syncthing", "", "Path to pinned syncthing binary")
+	deviceNameFlag := flag.String("device-name", "", "Display name for this device")
+	receiveDirFlag := flag.String("receive-dir", "", "Directory for incoming one-off Send files")
+	globalDiscFlag := flag.Bool("global-discovery", true, "Enable global discovery")
+	relaysFlag := flag.Bool("relays", true, "Enable encrypted relay fallback")
+	natFlag := flag.Bool("nat", true, "Enable UPnP/NAT-PMP port mapping")
+	minDiskFreeMBFlag := flag.Int("min-disk-free-mb", 0, "Minimum free disk space in MB (0 = 1%% default)")
 	autostartFlag := flag.Bool("autostart", false, "Enable system autostart on login and exit")
 	versionFlag := flag.Bool("version", false, "Print version and exit")
 	versionJSONFlag := flag.Bool("version-json", false, "Print structured build metadata as JSON and exit")
@@ -62,6 +74,7 @@ func main() {
 	// 1. Initialize OS Platform Abstraction Layer
 	var netAdapter pal.Network
 	var fwAdapter pal.Firewall
+	var storageAdapter pal.Storage
 	var autostart pal.Autostart
 	var lifecycle pal.Lifecycle
 
@@ -70,18 +83,21 @@ func main() {
 		w := pal_windows.NewWindowsAdapter()
 		netAdapter = w
 		fwAdapter = w
+		storageAdapter = w
 		autostart = w
 		lifecycle = w
 	case "darwin":
 		d := pal_darwin.NewDarwinAdapter()
 		netAdapter = d
 		fwAdapter = d
+		storageAdapter = d
 		autostart = d
 		lifecycle = d
 	case "linux":
 		l := pal_linux.NewLinuxAdapter()
 		netAdapter = l
 		fwAdapter = l
+		storageAdapter = l
 		autostart = l
 		lifecycle = l
 	default:
@@ -108,59 +124,114 @@ func main() {
 			_ = os.MkdirAll(baseDir, 0700)
 		}
 	} else {
-		_ = os.MkdirAll(baseDir, 0700)
+		if err := os.MkdirAll(baseDir, 0700); err != nil {
+			log.Fatalf("failed to create config dir %s: %v", baseDir, err)
+		}
 	}
 
 	engineCfg, err := engine.DefaultConfig(baseDir)
 	if err != nil {
 		log.Fatalf("failed to create engine config: %v", err)
 	}
-
-	// Write API key to disk with strict permissions (0600) for UI client access
-	apiKeyPath := filepath.Join(baseDir, "api.key")
-	_ = os.MkdirAll(baseDir, 0700)
-	if err := os.WriteFile(apiKeyPath, []byte(engineCfg.APIKey), 0600); err != nil {
-		log.Printf("warning: could not write api.key file: %v", err)
+	engineCfg.GUIAddress = *engineGUIFlag
+	engineCfg.SyncPort = *syncPortFlag
+	engineCfg.DiscoveryPort = *discoveryPortFlag
+	engineCfg.GlobalDiscovery = *globalDiscFlag
+	engineCfg.RelaysEnabled = *relaysFlag
+	engineCfg.NATEnabled = *natFlag
+	engineCfg.MinDiskFreeMB = *minDiskFreeMBFlag
+	if *deviceNameFlag != "" {
+		engineCfg.DeviceName = *deviceNameFlag
 	}
-
-	// 3. Initialize components
-	hostname, _ := os.Hostname()
-	if hostname == "" {
-		hostname = "Tandem Device"
+	if *receiveDirFlag != "" {
+		engineCfg.ReceiveDir = *receiveDirFlag
 	}
-
-	linkMgr := linkmanager.NewManager()
-	pairingSvc := pairing.NewService("TANDEM-LOCAL-ID", hostname)
-
-	apiServer := api.NewServer(api.ServerConfig{
-		BindAddr:   *apiBindFlag,
-		APIKey:     engineCfg.APIKey,
-		Version:    version,
-		DeviceID:   "TANDEM-LOCAL-ID",
-		DeviceName: hostname,
-	}, netAdapter, fwAdapter, linkMgr, pairingSvc)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// 4. Power lifecycle management: hold system awake during execution
+	// 3. Start supervised Syncthing engine (generates/preserves TLS cert & Device ID)
+	syncEngine := engine.NewSyncthingEngine(engineCfg, *syncthingBinFlag)
+	if err := syncEngine.Start(ctx); err != nil {
+		log.Fatalf("failed starting sync engine: %v", err)
+	}
+	defer func() {
+		_ = syncEngine.Stop()
+	}()
+
+	localID := syncEngine.DeviceID()
+	if localID == "" {
+		log.Fatalf("sync engine started without a local Device ID")
+	}
+
+	// 4. Start local UDP discovery service on all active interfaces
+	discSvc := discovery.NewService(discovery.Config{
+		DeviceID:      localID,
+		DeviceName:    engineCfg.DeviceName,
+		Port:          engineCfg.SyncPort,
+		DiscoveryPort: engineCfg.DiscoveryPort,
+	})
+
+	linkMgr := linkmanager.NewManager()
+	pairingSvc := pairing.NewService(localID, engineCfg.DeviceName)
+	sendMgr := send.NewManager(baseDir)
+
+	apiServer := api.NewServer(api.ServerConfig{
+		BindAddr:      *apiBindFlag,
+		APIKey:        engineCfg.APIKey,
+		Version:       version,
+		DeviceID:      localID,
+		DeviceName:    engineCfg.DeviceName,
+		SyncPort:      engineCfg.SyncPort,
+		DiscoveryPort: engineCfg.DiscoveryPort,
+		ReceiveDir:    engineCfg.ReceiveDir,
+	}, netAdapter, fwAdapter, linkMgr, pairingSvc)
+	apiServer.AttachRuntime(syncEngine, discSvc, storageAdapter, sendMgr)
+
+	if err := discSvc.Start(ctx, netAdapter, func(ann *discovery.Announcement) {
+		// If already paired in Syncthing, update its discovered LAN address if currently dynamic
+		if devs, err := syncEngine.GetConfigDevices(ctx); err == nil {
+			for _, dev := range devs {
+				if dev.DeviceID == ann.DeviceID && len(ann.Addresses) > 0 {
+					hasAddr := false
+					for _, a := range dev.Addresses {
+						if a == ann.Addresses[0] {
+							hasAddr = true
+							break
+						}
+					}
+					if !hasAddr {
+						dev.Addresses = append(ann.Addresses, "dynamic")
+						_ = syncEngine.UpsertDevice(ctx, dev)
+					}
+					break
+				}
+			}
+		}
+	}); err != nil {
+		log.Printf("warning: discovery service failed to bind port %d: %v", engineCfg.DiscoveryPort, err)
+	}
+
+	// 5. Power lifecycle management
 	releaseAwake := lifecycle.HoldAwake("Tandem daemon active synchronization")
 	defer releaseAwake()
 
-	// 5. Handle shutdown signals
+	// 6. Handle shutdown signals cleanly
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		sig := <-sigCh
 		log.Printf("received signal %v, shutting down...", sig)
+		_ = syncEngine.Stop()
 		cancel()
 		_ = apiServer.Stop()
 	}()
 
-	log.Printf("starting tandemd %s on %s...", version, *apiBindFlag)
-	log.Printf("Tandem API Key written to: %s", apiKeyPath)
+	log.Printf("starting tandemd %s (deviceId=%s) API=%s sync=%d discovery=%d",
+		version, localID, *apiBindFlag, engineCfg.SyncPort, engineCfg.DiscoveryPort)
 
-	if err := apiServer.Start(ctx); err != nil && err != context.Canceled {
+	if err := apiServer.Start(ctx); err != nil && err != context.Canceled && err.Error() != "http: Server closed" {
 		log.Fatalf("server stopped with error: %v", err)
 	}
+	_ = syncEngine.Stop()
 }

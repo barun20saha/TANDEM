@@ -99,3 +99,14 @@ This document records architectural decisions, `VERIFY` resolutions against upst
 - **Rationale:**
   - Preserves a single wire protocol (BEP over TLS 1.3/QUIC), single crypto architecture, and single firewall profile.
   - Avoids introducing a second unverified transfer daemon (such as plain HTTP) and prevents doubling the security attack surface.
+
+---
+
+### DECISION D6 (WS1): Sync Engine Integration — Pinned Supervised Binary
+- **Status:** DECIDED (Option 1: Pinned, SHA-256-Verified Syncthing Binary Supervised by `tandemd`)
+- **Decision:** Supervise an unmodified, pinned `syncthing` binary (`v2.1.7`, verified by SHA-256) as a child process managed by `core/engine`, communicating over a strict `127.0.0.1` loopback REST/Events API protected by an auto-generated API key.
+- **Rationale:**
+  - Keeps Syncthing unmodified under MPL-2.0 (`THIRD_PARTY_NOTICES.md`) without importing unstable internal `lib/` Go packages.
+  - Provides real BEP v1 over TLS 1.3 / QUIC / TCP, local UDP 21027 discovery, NAT traversal, and relay support immediately on desktop platforms.
+  - Telemetry (`urAccepted=-1`, `crashReportingEnabled=false`) and self-upgrades (`--no-upgrade`, `autoUpgradeIntervalH=0`) are disabled in generated config.
+  - Note: Android 10+ restricts executing binaries from app data directories; Android engine integration will be evaluated separately in WS4.

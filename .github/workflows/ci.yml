@@ -41,6 +41,15 @@ jobs:
           CGO_ENABLED: '0'
         run: go test -v .
 
+      - name: Fetch Pinned Syncthing & Run E2E Suite (Linux)
+        if: runner.os == 'Linux'
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          python3 scripts/fetch_syncthing.py --os linux --arch amd64 --out /tmp/tools/syncthing
+          export PATH="/tmp/tools:$PATH"
+          cd tests && go test -v -count=1 -timeout 10m ./e2e
+
       - name: Build tandemd Binary
         shell: bash
         run: |
