@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEFAULT_VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
-VERSION="${VERSION:-0.2.1}"
+VERSION="${VERSION:-0.2.2}"
 CORE_VERSION="${VERSION%%-*}"
 ARCH="${ARCH:-amd64}"
 CHANNEL="${CHANNEL:-stable}"
@@ -174,9 +174,14 @@ fi
 # 3. AppImage single-file bundle (when appimagetool is available)
 APPIMAGETOOL="${APPIMAGETOOL_BIN:-$(command -v appimagetool || true)}"
 if [[ -n "${APPIMAGETOOL}" && "${ARCH}" == "amd64" ]]; then
-    mkdir -p "${APPDIR}/usr/bin" "${APPDIR}/usr/share/applications" "${APPDIR}/usr/share/icons/hicolor/scalable/apps"
+    mkdir -p "${APPDIR}/usr/bin" \
+             "${APPDIR}/usr/share/applications" \
+             "${APPDIR}/usr/share/icons/hicolor/256x256/apps" \
+             "${APPDIR}/usr/share/icons/hicolor/scalable/apps"
     cp "${STAGE_DIR}/usr/bin/tandemd" "${APPDIR}/usr/bin/tandemd"
-    cp "${REPO_ROOT}/design/tandem.svg" "${APPDIR}/tandem.svg"
+    cp "${REPO_ROOT}/design/tandem.png" "${APPDIR}/tandem.png"
+    cp "${REPO_ROOT}/design/tandem.png" "${APPDIR}/.DirIcon"
+    cp "${REPO_ROOT}/design/tandem.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/tandem.png"
     cp "${REPO_ROOT}/design/tandem.svg" "${APPDIR}/usr/share/icons/hicolor/scalable/apps/tandem.svg"
     if [[ "${HAS_UI}" == "true" ]]; then
         mkdir -p "${APPDIR}/opt/tandem"

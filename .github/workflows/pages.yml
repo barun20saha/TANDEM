@@ -11,9 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -22,24 +20,34 @@ concurrency:
 jobs:
   deploy:
     name: Publish OS Download Portal
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - name: Publish site/ to gh-pages branch
+        shell: bash
+        run: |
+          TMP_SITE="$(mktemp -d)"
+          cp -a site/. "${TMP_SITE}/"
+          touch "${TMP_SITE}/.nojekyll"
 
-      - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages
+            git checkout -B gh-pages origin/gh-pages
+          else
+            git checkout --orphan gh-pages
+          fi
+
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -a "${TMP_SITE}/." .
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(pages): update OS download portal"
+            git push origin gh-pages
+          else
+            echo "gh-pages is already up to date."
+          fi

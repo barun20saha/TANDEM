@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../components/buttons.dart';
-import '../components/empty_state.dart';
 
 /// Screen S1: First Run Screen (Section 10.1).
 /// Explains Send vs Sync in two short lines. One action: Pair first device.

@@ -24,7 +24,7 @@ import (
 
 // Build metadata injected via -ldflags at release build time.
 var (
-	version   = "0.2.1"
+	version   = "0.2.2"
 	commit    = "dev"
 	buildDate = "unknown"
 	channel   = "stable"
