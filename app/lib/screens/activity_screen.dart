@@ -1,77 +1,117 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
-import '../components/transfer_row.dart';
 import '../components/empty_state.dart';
+import '../components/transfer_row.dart';
+import '../l10n/strings.dart';
+import '../models/models.dart';
+import '../state/tandem_controller.dart';
+import '../theme/tokens.dart';
+import '../utils/formatters.dart';
 
-/// Screen S11: Activity (Section 10.1).
-/// Recent transfers, completed syncs, recovered trash items, and errors.
+/// Screen S9: Activity Log (Section 10.1).
+/// Shows only real send sessions and live daemon events recorded in this session.
 class ActivityScreen extends StatelessWidget {
-  const ActivityScreen({Key? key}) : super(key: key);
+  final TandemController controller;
+
+  const ActivityScreen({Key? key, required this.controller}) : super(key: key);
+
+  TransferState _parseSendState(String s) {
+    switch (s) {
+      case 'completed':
+        return TransferState.done;
+      case 'failed':
+      case 'cancelled':
+        return TransferState.failed;
+      case 'queued':
+        return TransferState.queued;
+      default:
+        return TransferState.sending;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> activities = [
-      {
-        'fileName': 'project_specs_v2.pdf',
-        'progress': 1.0,
-        'speedText': '32.1 MB/s',
-        'timeLeftText': 'Completed 5m ago',
-        'interface': 'Direct Wi-Fi',
-      },
-      {
-        'fileName': 'IMG_20261124_0912.heic',
-        'progress': 1.0,
-        'speedText': '28.4 MB/s',
-        'timeLeftText': 'Completed 12m ago',
-        'interface': 'Direct Wi-Fi',
-      },
-      {
-        'fileName': 'notes_sync_conflict.txt',
-        'progress': 1.0,
-        'speedText': 'Recovered',
-        'timeLeftText': 'Restored from trash 1h ago',
-        'interface': 'Local Trash',
-      },
-    ];
-
-    if (activities.isEmpty) {
-      return const EmptyState(
-        icon: Icons.history_outlined,
-        title: 'No recent activity',
-        description: 'Transfers and sync history will appear here.',
-      );
-    }
+    final sessions = controller.sendSessions;
+    final events = controller.recentEvents;
 
     return Scaffold(
       backgroundColor: TandemTokens.color_ground,
       appBar: AppBar(
-        title: const Text('Activity'),
+        title: const Text('Activity Log'),
         backgroundColor: TandemTokens.color_surface,
         elevation: 0,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(TandemTokens.space_3),
-        itemCount: activities.length,
-        itemBuilder: (context, index) {
-          final item = activities[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: TandemTokens.space_2),
-            decoration: BoxDecoration(
-              color: TandemTokens.color_surface,
-              borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
-              border: Border.all(color: TandemTokens.color_border, width: 0.5),
+      body: (sessions.isEmpty && events.isEmpty)
+          ? EmptyState(
+              icon: Icons.history,
+              title: 'No activity yet',
+              description: TandemStrings.get('activity.empty'),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(TandemTokens.space_4),
+              children: [
+                if (sessions.isNotEmpty) ...[
+                  Text(
+                    'Send transfers',
+                    style: TandemTokens.text_md.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: TandemTokens.space_2),
+                  for (final SendSession s in sessions)
+                    TransferRow(
+                      fileName: '${s.totalFiles} file(s) -> ${s.targetDeviceId}',
+                      state: _parseSendState(s.state),
+                      progress: s.progress,
+                      speedText: formatSpeed(s.speedBytesPerSec),
+                      timeLeftText: s.state == 'completed'
+                          ? 'Done (${formatBytes(s.totalBytes)})'
+                          : formatBytes(s.totalBytes),
+                      interfaceUsed: s.interfaceUsed,
+                    ),
+                  const SizedBox(height: TandemTokens.space_4),
+                ],
+                if (events.isNotEmpty) ...[
+                  Text(
+                    'Recent daemon events',
+                    style: TandemTokens.text_md.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: TandemTokens.space_2),
+                  for (final DaemonEvent ev in events.reversed)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: TandemTokens.space_2),
+                      padding: const EdgeInsets.all(TandemTokens.space_3),
+                      decoration: BoxDecoration(
+                        color: TandemTokens.color_surface,
+                        borderRadius:
+                            BorderRadius.circular(TandemTokens.radius_panel),
+                        border: Border.all(
+                          color: TandemTokens.color_border,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              ev.event,
+                              style: TandemTokens.text_md,
+                            ),
+                          ),
+                          if (ev.raw['time'] != null)
+                            Text(
+                              ev.raw['time'].toString(),
+                              style: TandemTokens.text_sm.copyWith(
+                                color: TandemTokens.color_text.withAlpha(153),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ],
             ),
-            child: TransferRow(
-              fileName: item['fileName'] as String,
-              state: TransferState.done,
-              progress: item['progress'] as double,
-              speedText: item['speedText'] as String,
-              timeLeftText: item['timeLeftText'] as String,
-              interfaceUsed: item['interface'] as String,
-            ),
-          );
-        },
-      ),
     );
   }
 }

@@ -1,31 +1,23 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
-import '../components/buttons.dart';
 import '../components/banner.dart';
+import '../components/buttons.dart';
 import '../components/confirm_dialog.dart';
+import '../l10n/strings.dart';
+import '../models/models.dart';
+import '../state/tandem_controller.dart';
+import '../theme/tokens.dart';
+import '../utils/formatters.dart';
 
 /// Screen S3: Folder Detail (Section 10.1).
-/// Shows files, sharing devices, conflicts, trash retention, and folder sync mode.
+/// Backed by real tandemd folder status, errors, pause/resume, mode, and .tandem-trash.
 class FolderDetailScreen extends StatefulWidget {
-  final String folderId;
-  final String folderLabel;
-  final String folderPath;
-  final String folderType; // sendreceive, sendonly, receiveonly
-  final int sharedDeviceCount;
-  final int conflictCount;
-  final int trashFileCount;
-  final String trashSize;
+  final TandemController controller;
+  final TandemFolder folder;
 
   const FolderDetailScreen({
     Key? key,
-    required this.folderId,
-    required this.folderLabel,
-    required this.folderPath,
-    this.folderType = 'sendreceive',
-    this.sharedDeviceCount = 2,
-    this.conflictCount = 0,
-    this.trashFileCount = 3,
-    this.trashSize = '14.2 MB',
+    required this.controller,
+    required this.folder,
   }) : super(key: key);
 
   @override
@@ -33,48 +25,201 @@ class FolderDetailScreen extends StatefulWidget {
 }
 
 class _FolderDetailScreenState extends State<FolderDetailScreen> {
-  late String _currentType;
-  bool _isPaused = false;
+  late bool _paused;
+  late String _syncMode;
+  bool _loadingDetails = true;
+  bool _busy = false;
+  String? _errorText;
+  List<FolderErrorItem> _errors = const [];
+  List<TrashItem> _trashItems = const [];
 
   @override
   void initState() {
     super.initState();
-    _currentType = widget.folderType;
+    _paused = widget.folder.paused;
+    _syncMode = widget.folder.type;
+    _loadDetails();
   }
 
-  void _showStopSyncDialog() {
-    showDialog(
+  Future<void> _loadDetails() async {
+    final client = widget.controller.client;
+    if (client == null) {
+      if (mounted) {
+        setState(() {
+          _loadingDetails = false;
+          _errorText = 'Daemon is not connected.';
+        });
+      }
+      return;
+    }
+    setState(() {
+      _loadingDetails = true;
+      _errorText = null;
+    });
+    try {
+      final results = await Future.wait([
+        client.getFolderErrors(widget.folder.id),
+        client.getFolderTrash(widget.folder.id),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _errors = results[0] as List<FolderErrorItem>;
+        _trashItems = results[1] as List<TrashItem>;
+        _loadingDetails = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingDetails = false;
+        _errorText = e.toString();
+      });
+    }
+  }
+
+  Future<void> _togglePaused() async {
+    final next = !_paused;
+    setState(() {
+      _busy = true;
+      _errorText = null;
+    });
+    try {
+      await widget.controller.updateFolder(widget.folder.id, paused: next);
+      if (!mounted) return;
+      setState(() {
+        _paused = next;
+        _busy = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _errorText = e.toString();
+      });
+    }
+  }
+
+  Future<void> _changeMode(String mode) async {
+    setState(() {
+      _busy = true;
+      _errorText = null;
+    });
+    try {
+      await widget.controller.updateFolder(widget.folder.id, type: mode);
+      if (!mounted) return;
+      setState(() {
+        _syncMode = mode;
+        _busy = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _errorText = e.toString();
+      });
+    }
+  }
+
+  Future<void> _restoreItem(TrashItem item) async {
+    final client = widget.controller.client;
+    if (client == null) return;
+    setState(() {
+      _busy = true;
+      _errorText = null;
+    });
+    try {
+      await client.restoreTrashItem(widget.folder.id, item.trashId);
+      await widget.controller.refreshAll();
+      await _loadDetails();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorText = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _confirmStopSyncing() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => ConfirmDialog(
-        title: 'Stop syncing folder?',
-        body: 'Tandem will stop syncing "${widget.folderLabel}". Files on this device will stay intact, and deleted files remain in trash for 30 days.',
+        title: 'Stop syncing this folder?',
+        body: TandemStrings.get('confirm.stop_syncing'),
         confirmLabel: 'Stop syncing',
-        cancelLabel: 'Keep syncing',
+        cancelLabel: 'Cancel',
         isDestructive: true,
-        onConfirm: () {
-          Navigator.of(ctx).pop();
-          Navigator.of(context).pop();
-        },
-        onCancel: () => Navigator.of(ctx).pop(),
+        onCancel: () => Navigator.of(ctx).pop(false),
+        onConfirm: () => Navigator.of(ctx).pop(true),
       ),
+    );
+    if (confirmed != true) return;
+    setState(() {
+      _busy = true;
+      _errorText = null;
+    });
+    try {
+      await widget.controller.removeFolder(widget.folder.id);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _errorText = e.toString();
+        });
+      }
+    }
+  }
+
+  Widget _buildModeOption(String value, String title, String subtitle) {
+    return RadioListTile<String>(
+      value: value,
+      groupValue: _syncMode,
+      activeColor: TandemTokens.color_link_direct,
+      contentPadding: EdgeInsets.zero,
+      title: Text(title, style: TandemTokens.text_md),
+      subtitle: Text(
+        subtitle,
+        style: TandemTokens.text_sm.copyWith(
+          color: TandemTokens.color_text.withAlpha(153),
+        ),
+      ),
+      onChanged: _busy
+          ? null
+          : (val) {
+              if (val != null && val != _syncMode) {
+                _changeMode(val);
+              }
+            },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final folder = widget.folder;
+    final displayTitle = folder.label.isNotEmpty ? folder.label : folder.id;
+    final totalTrashBytes =
+        _trashItems.fold<int>(0, (sum, item) => sum + item.sizeBytes);
+
     return Scaffold(
       backgroundColor: TandemTokens.color_ground,
       appBar: AppBar(
-        title: Text(widget.folderLabel),
+        title: Text(displayTitle),
         backgroundColor: TandemTokens.color_surface,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh folder',
+            onPressed: _busy ? null : _loadDetails,
+          ),
           Padding(
             padding: const EdgeInsets.only(right: TandemTokens.space_3),
             child: TandemButton(
-              label: _isPaused ? 'Resume' : 'Pause',
+              label: _paused ? 'Resume' : 'Pause',
               variant: TandemButtonVariant.secondary,
-              onPressed: () => setState(() => _isPaused = !_isPaused),
+              isLoading: _busy,
+              onPressed: _busy ? null : _togglePaused,
             ),
           ),
         ],
@@ -82,17 +227,30 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.all(TandemTokens.space_4),
         children: [
-          if (widget.conflictCount > 0) ...[
+          if (_errorText != null) ...[
             BannerNotification(
-              message: '${widget.conflictCount} file conflicts found. Different edits were made to files at the same time; both copies have been preserved safely.',
-              variant: BannerVariant.warning,
-              actionLabel: 'Review conflicts',
-              onAction: () {},
+              variant: BannerVariant.error,
+              message: _errorText!,
             ),
-            const SizedBox(height: TandemTokens.space_4),
+            const SizedBox(height: TandemTokens.space_3),
           ],
-
-          // Path & Metadata Card
+          if (_paused) ...[
+            const BannerNotification(
+              variant: BannerVariant.info,
+              message:
+                  'Syncing paused: changes will stay queued until you resume this folder.',
+            ),
+            const SizedBox(height: TandemTokens.space_3),
+          ],
+          for (final err in _errors) ...[
+            BannerNotification(
+              variant: BannerVariant.warning,
+              message: err.path.isNotEmpty
+                  ? '${err.code}: ${err.path} (${err.message})'
+                  : '${err.code}: ${err.message}',
+            ),
+            const SizedBox(height: TandemTokens.space_3),
+          ],
           Container(
             padding: const EdgeInsets.all(TandemTokens.space_4),
             decoration: BoxDecoration(
@@ -104,53 +262,77 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Local folder path',
-                  style: TandemTokens.text_xs.copyWith(
-                    color: TandemTokens.color_text.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: TandemTokens.space_1),
-                Text(
-                  widget.folderPath,
+                  folder.path,
                   style: TandemTokens.text_sm.copyWith(
-                    fontFamily: 'JetBrains Mono',
+                    color: TandemTokens.color_text.withAlpha(153),
                   ),
                 ),
-                const Divider(height: TandemTokens.space_5, color: TandemTokens.color_border),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Sync mode', style: TandemTokens.text_sm),
-                    DropdownButton<String>(
-                      value: _currentType,
-                      underline: const SizedBox(),
-                      dropdownColor: TandemTokens.color_surface,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'sendreceive',
-                          child: Text('Send & Receive'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'sendonly',
-                          child: Text('Send only'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'receiveonly',
-                          child: Text('Receive only'),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _currentType = val);
-                      },
-                    ),
-                  ],
+                const SizedBox(height: TandemTokens.space_2),
+                Text(
+                  '${folder.totalFiles} files • ${formatBytes(folder.totalBytes)} • State: ${_paused ? 'paused' : folder.state}',
+                  style: TandemTokens.text_md,
+                ),
+                if (folder.needBytes > 0) ...[
+                  const SizedBox(height: TandemTokens.space_2),
+                  Text(
+                    'Remaining to sync: ${formatBytes(folder.needBytes)}',
+                    style: TandemTokens.text_sm,
+                  ),
+                ],
+                const SizedBox(height: TandemTokens.space_3),
+                Text(
+                  'Shared with: ${folder.sharedDevices.isEmpty ? 'This device only' : folder.sharedDevices.join(', ')}',
+                  style: TandemTokens.text_sm.copyWith(
+                    color: TandemTokens.color_text.withAlpha(153),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: TandemTokens.space_4),
-
-          // Trash & Recovery Section (Section 4.8 & Rule 6)
+          const SizedBox(height: TandemTokens.space_5),
+          Text(
+            'Sync mode',
+            style: TandemTokens.text_md.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: TandemTokens.space_2),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: TandemTokens.space_4,
+              vertical: TandemTokens.space_2,
+            ),
+            decoration: BoxDecoration(
+              color: TandemTokens.color_surface,
+              borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
+              border: Border.all(color: TandemTokens.color_border, width: 0.5),
+            ),
+            child: Column(
+              children: [
+                _buildModeOption(
+                  'sendreceive',
+                  'Send and receive',
+                  'Keep every paired copy identical both ways.',
+                ),
+                const Divider(height: 1.0, color: TandemTokens.color_border),
+                _buildModeOption(
+                  'sendonly',
+                  'Send only',
+                  'Push local changes out; keep local files untouched by peers.',
+                ),
+                const Divider(height: 1.0, color: TandemTokens.color_border),
+                _buildModeOption(
+                  'receiveonly',
+                  'Receive only',
+                  'Accept updates from peers without sending local edits back.',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: TandemTokens.space_5),
+          Text(
+            'Trash (${_trashItems.length} files, ${formatBytes(totalTrashBytes)})',
+            style: TandemTokens.text_md.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: TandemTokens.space_2),
           Container(
             padding: const EdgeInsets.all(TandemTokens.space_4),
             decoration: BoxDecoration(
@@ -158,38 +340,61 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
               borderRadius: BorderRadius.circular(TandemTokens.radius_panel),
               border: Border.all(color: TandemTokens.color_border, width: 0.5),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.restore_from_trash_outlined, color: TandemTokens.color_link_direct),
-                const SizedBox(width: TandemTokens.space_3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Trash retention', style: TandemTokens.text_sm.copyWith(fontWeight: FontWeight.w600)),
-                      Text(
-                        '${widget.trashFileCount} files in .tandem-trash (${widget.trashSize}) • Kept for 30 days',
-                        style: TandemTokens.text_xs.copyWith(color: TandemTokens.color_text.withOpacity(0.7)),
+            child: _loadingDetails
+                ? const Center(child: CircularProgressIndicator())
+                : _trashItems.isEmpty
+                    ? Text(
+                        'No files in .tandem-trash for this folder.',
+                        style: TandemTokens.text_sm.copyWith(
+                          color: TandemTokens.color_text.withAlpha(153),
+                        ),
+                      )
+                    : Column(
+                        children: _trashItems.map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: TandemTokens.space_2,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.originalPath,
+                                        style: TandemTokens.text_md,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        '${formatBytes(item.sizeBytes)} • Deleted ${item.deletedAt}',
+                                        style: TandemTokens.text_sm.copyWith(
+                                          color:
+                                              TandemTokens.color_text.withAlpha(153),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: TandemTokens.space_3),
+                                TandemButton(
+                                  label: 'Restore',
+                                  variant: TandemButtonVariant.secondary,
+                                  onPressed: _busy ? null : () => _restoreItem(item),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ],
-                  ),
-                ),
-                TandemButton(
-                  label: 'Recover files',
-                  variant: TandemButtonVariant.secondary,
-                  onPressed: () {},
-                ),
-              ],
-            ),
           ),
           const SizedBox(height: TandemTokens.space_6),
-
-          // Danger Zone
-          Center(
+          Align(
+            alignment: Alignment.centerLeft,
             child: TandemButton(
-              label: 'Stop syncing this folder',
+              label: 'Stop syncing folder',
               variant: TandemButtonVariant.destructive,
-              onPressed: _showStopSyncDialog,
+              onPressed: _busy ? null : _confirmStopSyncing,
             ),
           ),
         ],

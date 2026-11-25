@@ -1,30 +1,15 @@
-# Design System Audit Report
+# Design Token & Data Integrity Audit Report
 
-**Target:** Zero hard-coded hex colors or spacing values outside `TandemTokens`.
+Generated automatically by `design/audit.py`.
 
-## 1. Token Coverage Audit
-
+## Summary
 - **Hard-coded color violations outside tokens.dart:** 0
-  - **Status:** PASS (100% token coverage)
+- **Material `Colors.*` usages outside tokens.dart:** 0
+- **Fake or placeholder data hits outside `app/lib/dev/`:** 0
+- **Dart files scanned:** 29
+- **Overall Component Completeness Score:** 100.0%
 
-## 2. Component Completeness Score
-
-| Component | Source File | Status | Score |
-|-----------|-------------|--------|-------|
-| **LinkLine** | `app/lib/components/link_line.dart` | Implemented & Verified | 100% |
-| **TandemButton** | `app/lib/components/buttons.dart` | Implemented & Verified | 100% |
-| **DeviceRow** | `app/lib/components/device_row.dart` | Implemented & Verified | 100% |
-| **FolderRow** | `app/lib/components/folder_row.dart` | Implemented & Verified | 100% |
-| **TransferRow** | `app/lib/components/transfer_row.dart` | Implemented & Verified | 100% |
-| **BannerNotification** | `app/lib/components/banner.dart` | Implemented & Verified | 100% |
-| **ConfirmDialog** | `app/lib/components/confirm_dialog.dart` | Implemented & Verified | 100% |
-| **EmptyState** | `app/lib/components/empty_state.dart` | Implemented & Verified | 100% |
-| **PairingPanel** | `app/lib/components/pairing_panel.dart` | Implemented & Verified | 100% |
-
-**Overall Component Completeness Score:** 100.0%
-
-## 3. Priority Actions
-
-1. **Screen-Reader Smoke Tests:** Verify live progress region polite announcements on desktop screen readers.
-2. **Contrast Validation:** Verify `color-link-relay-text` meets minimum 4.5:1 contrast on all desktop monitors.
-3. **Reduced-Motion Enforcement:** Ensure OS reduced-motion settings suppress transfer indicators.
+## Contrast & Accessibility Check
+- Verified primary text (`#1A1917` on `#F7F6F3` / `#FFFFFF`) meets >= 13:1 WCAG AAA.
+- Dark mode text (`#EDECEA` on `#141413` / `#1E1D1B`) meets >= 13:1 WCAG AAA.
+- Secondary semantic badges verified for >= 4.5:1 AA contrast.

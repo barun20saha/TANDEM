@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
 import '../components/buttons.dart';
+import '../theme/tokens.dart';
 
 /// Screen S1: First Run Screen (Section 10.1).
-/// Explains Send vs Sync in two short lines. One action: Pair first device.
+/// Explains Send vs Sync in two short lines and shows this device's real name and pairing action.
 class FirstRunScreen extends StatelessWidget {
+  final String deviceName;
+  final String deviceId;
   final VoidCallback onPairDevice;
 
-  const FirstRunScreen({Key? key, required this.onPairDevice}) : super(key: key);
+  const FirstRunScreen({
+    Key? key,
+    required this.deviceName,
+    required this.deviceId,
+    required this.onPairDevice,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +27,7 @@ class FirstRunScreen extends StatelessWidget {
             padding: const EdgeInsets.all(TandemTokens.space_6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Tandem',
@@ -33,15 +40,19 @@ class FirstRunScreen extends StatelessWidget {
                 const SizedBox(height: TandemTokens.space_3),
                 Text(
                   'Send files nearby with no internet.\nKeep folders identical across all your devices anywhere.',
-                  style: TandemTokens.text_md.copyWith(
-                    color: TandemTokens.color_text.withOpacity(0.85),
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
+                  style: TandemTokens.text_md.copyWith(height: 1.5),
                 ),
-                const SizedBox(height: TandemTokens.space_6),
+                if (deviceName.isNotEmpty) ...[
+                  const SizedBox(height: TandemTokens.space_4),
+                  Text(
+                    'This device: $deviceName',
+                    style: TandemTokens.text_sm.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+                const SizedBox(height: TandemTokens.space_5),
                 TandemButton(
                   label: 'Pair device',
+                  variant: TandemButtonVariant.primary,
                   size: TandemButtonSize.lg,
                   onPressed: onPairDevice,
                 ),

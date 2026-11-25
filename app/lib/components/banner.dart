@@ -40,41 +40,51 @@ class BannerNotification extends StatelessWidget {
         horizontal: TandemTokens.space_4,
         vertical: TandemTokens.space_2,
       ),
-      padding: const EdgeInsets.all(TandemTokens.space_3),
       decoration: BoxDecoration(
         color: TandemTokens.color_surface,
         borderRadius: BorderRadius.circular(TandemTokens.radius_control),
-        border: Border(
-          left: BorderSide(color: borderColor, width: 4.0),
-          top: const BorderSide(color: TandemTokens.color_border, width: 0.5),
-          right: const BorderSide(color: TandemTokens.color_border, width: 0.5),
-          bottom: const BorderSide(color: TandemTokens.color_border, width: 0.5),
-        ),
+        border: Border.all(color: TandemTokens.color_border, width: 0.5),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: TandemTokens.text_sm,
-            ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(TandemTokens.radius_control),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 4.0, color: borderColor),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(TandemTokens.space_3),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          message,
+                          style: TandemTokens.text_sm,
+                        ),
+                      ),
+                      if (actionLabel != null && onAction != null) ...[
+                        const SizedBox(width: TandemTokens.space_3),
+                        TextButton(
+                          onPressed: onAction,
+                          style: TextButton.styleFrom(
+                            foregroundColor: TandemTokens.color_link_direct,
+                            padding: const EdgeInsets.symmetric(horizontal: TandemTokens.space_2),
+                          ),
+                          child: Text(
+                            actionLabel!,
+                            style: TandemTokens.text_sm.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(width: TandemTokens.space_3),
-            TextButton(
-              onPressed: onAction,
-              style: TextButton.styleFrom(
-                foregroundColor: TandemTokens.color_link_direct,
-                padding: const EdgeInsets.symmetric(horizontal: TandemTokens.space_2),
-              ),
-              child: Text(
-                actionLabel!,
-                style: TandemTokens.text_sm.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

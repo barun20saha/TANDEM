@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
-import '../components/device_row.dart';
-import '../components/link_line.dart';
 import '../components/buttons.dart';
+import '../components/device_row.dart';
 import '../components/empty_state.dart';
+import '../components/link_line.dart';
+import '../l10n/strings.dart';
+import '../models/models.dart';
+import '../theme/tokens.dart';
+import '../utils/formatters.dart';
 
 /// Screen S5: Devices Screen (Section 10.1).
-/// Lists this device and all remote paired devices with signature LinkLine state.
+/// Renders real local device identity + paired/discovered devices from tandemd.
 class DevicesScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> devices;
+  final DaemonStatus? status;
+  final List<TandemDevice> devices;
   final VoidCallback onPairDevice;
-  final Function(String deviceId)? onSelectDevice;
+  final Function(TandemDevice device)? onSelectDevice;
 
   const DevicesScreen({
     Key? key,
+    required this.status,
     required this.devices,
     required this.onPairDevice,
     this.onSelectDevice,
@@ -21,16 +26,6 @@ class DevicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (devices.isEmpty) {
-      return EmptyState(
-        icon: Icons.devices_outlined,
-        title: 'No devices yet',
-        description: 'Pair a second device to start sending and syncing.',
-        actionLabel: 'Pair device',
-        onAction: onPairDevice,
-      );
-    }
-
     return Scaffold(
       backgroundColor: TandemTokens.color_ground,
       appBar: AppBar(
@@ -48,26 +43,44 @@ class DevicesScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: devices.length,
-        itemBuilder: (context, index) {
-          final d = devices[index];
-          final linkStr = d['linkState'] as String? ?? 'direct-local';
-          LinkLineState linkState = LinkLineState.directLocal;
-          if (linkStr == 'direct-internet') linkState = LinkLineState.directInternet;
-          if (linkStr == 'relayed') linkState = LinkLineState.relayed;
-          if (linkStr == 'connecting') linkState = LinkLineState.connecting;
-          if (linkStr == 'offline') linkState = LinkLineState.offline;
-
-          return DeviceRow(
-            deviceId: d['id'] ?? '',
-            name: d['name'] ?? '',
-            isThisDevice: d['isThisDevice'] == true,
-            linkState: linkState,
-            lastSeen: d['lastSeen'] ?? 'Just now',
-            onTap: () => onSelectDevice?.call(d['id'] ?? ''),
-          );
-        },
+      body: ListView(
+        children: [
+          if (status != null)
+            DeviceRow(
+              deviceId: status!.myDeviceId,
+              name: status!.myDeviceName,
+              isThisDevice: true,
+              linkState: LinkLineState.directLocal,
+              lastSeen: 'This device',
+            ),
+          if (devices.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: TandemTokens.space_6),
+              child: EmptyState(
+                icon: Icons.devices_outlined,
+                title: 'No paired devices',
+                description: TandemStrings.get('devices.empty'),
+                actionLabel: 'Pair device',
+                onAction: onPairDevice,
+              ),
+            )
+          else
+            ...devices.map(
+              (d) => DeviceRow(
+                deviceId: d.id,
+                name: d.name.isNotEmpty ? d.name : d.id,
+                isThisDevice: false,
+                linkState: parseLinkState(d.linkState),
+                syncState: (d.uploadRateBytesPerSec > 0 || d.downloadRateBytesPerSec > 0)
+                    ? DeviceSyncState.syncing
+                    : DeviceSyncState.upToDate,
+                lastSeen: d.isPaired
+                    ? (d.lastSeen.isNotEmpty ? d.lastSeen : 'Paired')
+                    : 'Nearby (not paired)',
+                onTap: () => onSelectDevice?.call(d),
+              ),
+            ),
+        ],
       ),
     );
   }

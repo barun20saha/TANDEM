@@ -176,7 +176,7 @@ class NoInternetHelperScreen extends StatelessWidget {
             backgroundColor: TandemTokens.color_link_direct,
             child: Text(
               num,
-              style: TandemTokens.text_xs.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TandemTokens.text_xs.copyWith(color: TandemTokens.color_on_primary, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: TandemTokens.space_3),

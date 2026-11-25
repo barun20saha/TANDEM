@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class TandemTokens {
 
   // Light Theme Colors
+  static const Color color_transparent = Color(0x00000000);
   static const Color color_ground = Color(0xFFE8ECEF);
   static const Color color_surface = Color(0xFFF6F8F9);
   static const Color color_border = Color(0xFFC5CED4);
@@ -13,6 +14,7 @@ class TandemTokens {
   static const Color color_link_relay_text = Color(0xFF8A5A00);
   static const Color color_ok = Color(0xFF2F6B47);
   static const Color color_danger = Color(0xFFA93A48);
+  static const Color color_on_primary = Color(0xFFFFFFFF);
 
   // Dark Theme Colors
   static const Color color_ground_dark = Color(0xFF12202B);
@@ -24,6 +26,7 @@ class TandemTokens {
   static const Color color_link_relay_text_dark = Color(0xFFE0A93B);
   static const Color color_ok_dark = Color(0xFF6FC08D);
   static const Color color_danger_dark = Color(0xFFE88A95);
+  static const Color color_on_primary_dark = Color(0xFF0E1A24);
 
   // Spacing (4pt base)
   static const double space_1 = 4.0;

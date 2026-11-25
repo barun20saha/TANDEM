@@ -1,0 +1,38 @@
+Audit complete: 0 color violations, 0 Colors.* violations, 0 fake-data hits.
+Analyzing app...                                                
+
+   info • Use 'const' with the constructor to improve performance. Try adding
+          the 'const' keyword to the constructor invocation •
+          lib/components/folder_row.dart:97:13 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding
+          the 'const' keyword to the constructor invocation •
+          lib/screens/folders_screen.dart:142:19 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance. Try adding
+          the 'const' keyword to the constructor invocation •
+          lib/screens/no_internet_helper_screen.dart:92:27 •
+          prefer_const_constructors
+   info • Unnecessary braces in a string interpolation. Try removing the braces
+          • lib/services/daemon_launcher.dart:51:37 •
+          unnecessary_brace_in_string_interps
+   info • Use 'const' for final variables initialized to a constant value. Try
+          replacing 'final' with 'const' •
+          lib/services/daemon_launcher.dart:63:5 • prefer_const_declarations
+
+5 issues found. (ran in 1.6s)
+00:00 +0: loading /home/barun/Desktop/TANDEM/app/test/components/link_line_test.dart
+00:00 +0: /home/barun/Desktop/TANDEM/app/test/components/link_line_test.dart: LinkLine Widget Tests renders direct local link with text label
+00:00 +1: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:00 +2: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:01 +3: /home/barun/Desktop/TANDEM/app/test/components/folder_row_test.dart: FolderRow Widget Tests renders label, path, size, and responds to tap
+00:01 +4: /home/barun/Desktop/TANDEM/app/test/components/device_row_test.dart: DeviceRow Widget Tests displays device name, last seen, and responds to tap
+00:02 +5: /home/barun/Desktop/TANDEM/app/test/components/device_row_test.dart: DeviceRow Widget Tests shows This device badge when isThisDevice is true
+00:02 +6: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies primary direct link color
+00:02 +7: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies relay link color
+00:02 +8: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies spacing scale is strict 4pt base grid
+00:02 +9: /home/barun/Desktop/TANDEM/app/test/tokens_test.dart: TandemTokens Design System verifies radius tokens
+00:02 +10: /home/barun/Desktop/TANDEM/app/test/screens_empty_state_test.dart: (setUpAll)
+00:02 +10: /home/barun/Desktop/TANDEM/app/test/screens_empty_state_test.dart: Real Daemon UI Empty & Error States (WS2) TandemApp opens on FirstRunScreen when daemon has zero devices & folders
+00:03 +11: /home/barun/Desktop/TANDEM/app/test/screens_empty_state_test.dart: Real Daemon UI Empty & Error States (WS2) TandemApp displays error state & retry button when daemon fails
+00:03 +12: /home/barun/Desktop/TANDEM/app/test/screens_empty_state_test.dart: Real Daemon UI Empty & Error States (WS2) Individual screens render honest empty states with no invented data
+00:03 +13: /home/barun/Desktop/TANDEM/app/test/screens_empty_state_test.dart: (tearDownAll)
+00:03 +13: All tests passed!

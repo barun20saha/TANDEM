@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
+import '../state/tandem_controller.dart';
 import '../theme/tokens.dart';
-import 'folders_screen.dart';
-import 'folder_detail_screen.dart';
-import 'send_screen.dart';
-import 'devices_screen.dart';
-import 'link_status_screen.dart';
-import 'no_internet_helper_screen.dart';
-import 'pairing_screen.dart';
-import 'settings_screen.dart';
-import 'health_check_screen.dart';
 import 'activity_screen.dart';
+import 'devices_screen.dart';
+import 'first_run_screen.dart';
+import 'folder_detail_screen.dart';
+import 'folders_screen.dart';
+import 'health_check_screen.dart';
+import 'link_status_screen.dart';
+import 'pairing_screen.dart';
+import 'send_screen.dart';
+import 'settings_screen.dart';
 
-/// Responsive App Shell adapting between Desktop (two panes) and Mobile (bottom navigation) per Section 10.2.
+/// Responsive App Shell backed strictly by TandemController.
 class HomeShell extends StatefulWidget {
-  const HomeShell({Key? key}) : super(key: key);
+  final TandemController controller;
+
+  const HomeShell({Key? key, required this.controller}) : super(key: key);
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -23,95 +27,138 @@ class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
   String? _selectedDeviceId;
 
-  // Mock initial state for UI rendering
-  final List<Map<String, dynamic>> _folders = [
-    {
-      'id': 'folder-1',
-      'label': 'Work Documents',
-      'path': '/home/barun/Documents/Work',
-      'formattedSize': '1.4 GB',
-      'sharedDevices': ['DEV-PHONE', 'DEV-DESKTOP'],
-    },
-    {
-      'id': 'folder-2',
-      'label': 'Camera Photos',
-      'path': '/sdcard/DCIM/Camera',
-      'formattedSize': '14.2 GB',
-      'sharedDevices': ['DEV-DESKTOP'],
-    },
-  ];
+  TandemController get _ctrl => widget.controller;
 
-  final List<Map<String, dynamic>> _devices = [
-    {
-      'id': 'THIS-DEVICE',
-      'name': 'Barun’s Linux Laptop',
-      'isThisDevice': true,
-      'linkState': 'direct-local',
-      'lastSeen': 'Active now',
-    },
-    {
-      'id': 'DEV-PHONE',
-      'name': 'Pixel 9 Pro (Local Wi-Fi)',
-      'isThisDevice': false,
-      'linkState': 'direct-local',
-      'lastSeen': 'Just now',
-    },
-    {
-      'id': 'DEV-DESKTOP',
-      'name': 'Home Server (Internet)',
-      'isThisDevice': false,
-      'linkState': 'direct-internet',
-      'lastSeen': '10m ago',
-    },
-  ];
+  void _openPairing() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PairingScreen(controller: _ctrl),
+      ),
+    );
+  }
+
+  void _openAddFolder() {
+    final paired = _ctrl.devices.where((d) => d.isPaired).toList();
+    showAddFolderDialog(
+      context: context,
+      pairedDevices: paired,
+      onSubmit: (path, label, type, shared) =>
+          _ctrl.addFolder(path: path, label: label, type: type, sharedDevices: shared),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final devices = _ctrl.devices;
+    final folders = _ctrl.folders;
+    final status = _ctrl.status;
+
+    if (devices.isEmpty && folders.isEmpty) {
+      return FirstRunScreen(
+        deviceName: status?.myDeviceName ?? '',
+        deviceId: status?.myDeviceId ?? '',
+        onPairDevice: _openPairing,
+      );
+    }
+
+    final pairedDevices = devices.where((d) => d.isPaired).toList();
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1024;
 
     if (isDesktop) {
-      // Desktop Two-Pane Layout (Section 10.2)
+      TandemDevice? selectedDevice;
+      if (_selectedDeviceId != null) {
+        for (final d in devices) {
+          if (d.id == _selectedDeviceId) {
+            selectedDevice = d;
+            break;
+          }
+        }
+      }
+
       return Scaffold(
         backgroundColor: TandemTokens.color_ground,
+        appBar: AppBar(
+          title: const Text('Tandem'),
+          backgroundColor: TandemTokens.color_surface,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.send_outlined),
+              tooltip: 'Send',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SendScreen(
+                      pairedDevices: pairedDevices,
+                      sessions: _ctrl.sendSessions,
+                      onInitiateSend: (id, paths) =>
+                          _ctrl.sendFiles(targetDeviceId: id, filePaths: paths),
+                    ),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.favorite_outline),
+              tooltip: 'Health Check',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => HealthCheckScreen(controller: _ctrl)),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'Activity',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ActivityScreen(controller: _ctrl)),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: 'Settings',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => SettingsScreen(controller: _ctrl)),
+                );
+              },
+            ),
+          ],
+        ),
         body: Row(
           children: [
-            // Left Pane: Navigation & Device List (320px)
             SizedBox(
               width: 320.0,
               child: DevicesScreen(
-                devices: _devices,
-                onPairDevice: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const NoInternetHelperScreen(),
-                  ));
-                },
-                onSelectDevice: (id) {
-                  setState(() => _selectedDeviceId = id);
-                },
+                status: status,
+                devices: devices,
+                onPairDevice: _openPairing,
+                onSelectDevice: (d) => setState(() => _selectedDeviceId = d.id),
               ),
             ),
             const VerticalDivider(width: 1.0, color: TandemTokens.color_border),
-
-            // Right Pane: Folders or Device Detail
             Expanded(
-              child: _selectedDeviceId != null
+              child: selectedDevice != null
                   ? LinkStatusScreen(
-                      deviceName: 'Pixel 9 Pro',
-                      deviceId: _selectedDeviceId!,
+                      controller: _ctrl,
+                      device: selectedDevice,
+                      health: _ctrl.health,
                     )
                   : FoldersScreen(
-                      folders: _folders,
-                      onAddFolder: () {},
-                      onSelectFolder: (id) {
-                        final f = _folders.firstWhere((x) => x['id'] == id, orElse: () => _folders.first);
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => FolderDetailScreen(
-                            folderId: f['id'] as String,
-                            folderLabel: f['label'] as String,
-                            folderPath: f['path'] as String,
+                      folders: folders,
+                      onAddFolder: _openAddFolder,
+                      onSelectFolder: (f) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => FolderDetailScreen(
+                              controller: _ctrl,
+                              folder: f,
+                            ),
                           ),
-                        ));
+                        );
                       },
                     ),
             ),
@@ -120,7 +167,6 @@ class _HomeShellState extends State<HomeShell> {
       );
     }
 
-    // Mobile Navigation Layout (Section 10.2)
     return Scaffold(
       backgroundColor: TandemTokens.color_ground,
       appBar: AppBar(
@@ -132,28 +178,28 @@ class _HomeShellState extends State<HomeShell> {
             icon: const Icon(Icons.favorite_outline),
             tooltip: 'System Health Check',
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const HealthCheckScreen(),
-              ));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => HealthCheckScreen(controller: _ctrl)),
+              );
             },
           ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Activity Log',
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ActivityScreen(),
-              ));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ActivityScreen(controller: _ctrl)),
+              );
             },
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Settings',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const SettingsScreen(),
-              ));
-            },
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => SettingsScreen(controller: _ctrl)),
+                );
+              },
           ),
         ],
       ),
@@ -161,46 +207,39 @@ class _HomeShellState extends State<HomeShell> {
         index: _currentIndex,
         children: [
           FoldersScreen(
-            folders: _folders,
-            onAddFolder: () {},
-            onSelectFolder: (id) {
-              final f = _folders.firstWhere((x) => x['id'] == id, orElse: () => _folders.first);
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => FolderDetailScreen(
-                  folderId: f['id'] as String,
-                  folderLabel: f['label'] as String,
-                  folderPath: f['path'] as String,
+            folders: folders,
+            onAddFolder: _openAddFolder,
+            onSelectFolder: (f) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => FolderDetailScreen(
+                    controller: _ctrl,
+                    folder: f,
+                  ),
                 ),
-              ));
+              );
             },
           ),
           SendScreen(
-            selectedFiles: const ['/tmp/document.pdf'],
-            activeTransfers: const [
-              {
-                'fileName': 'document.pdf',
-                'progress': 0.72,
-                'speedText': '21.4 MB/s',
-                'timeLeftText': '2s left',
-                'interface': 'Direct Wi-Fi',
-              }
-            ],
-            onPickFiles: () {},
+            pairedDevices: pairedDevices,
+            sessions: _ctrl.sendSessions,
+            onInitiateSend: (id, paths) =>
+                _ctrl.sendFiles(targetDeviceId: id, filePaths: paths),
           ),
           DevicesScreen(
-            devices: _devices,
-            onPairDevice: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const PairingScreen(),
-              ));
-            },
-            onSelectDevice: (id) {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => LinkStatusScreen(
-                  deviceName: 'Companion Device',
-                  deviceId: id,
+            status: status,
+            devices: devices,
+            onPairDevice: _openPairing,
+            onSelectDevice: (d) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => LinkStatusScreen(
+                    controller: _ctrl,
+                    device: d,
+                    health: _ctrl.health,
+                  ),
                 ),
-              ));
+              );
             },
           ),
         ],
@@ -209,7 +248,7 @@ class _HomeShellState extends State<HomeShell> {
         currentIndex: _currentIndex,
         backgroundColor: TandemTokens.color_surface,
         selectedItemColor: TandemTokens.color_link_direct,
-        unselectedItemColor: TandemTokens.color_text.withOpacity(0.6),
+        unselectedItemColor: TandemTokens.color_text.withAlpha(153),
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(

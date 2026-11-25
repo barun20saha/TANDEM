@@ -48,7 +48,7 @@ class LinkLine extends StatelessWidget {
       case LinkLineState.connecting:
         return TandemTokens.color_border;
       case LinkLineState.offline:
-        return Colors.transparent;
+        return TandemTokens.color_transparent;
     }
   }
 

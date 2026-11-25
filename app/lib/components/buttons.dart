@@ -44,7 +44,7 @@ class TandemButton extends StatelessWidget {
     switch (variant) {
       case TandemButtonVariant.primary:
         bg = TandemTokens.color_link_direct;
-        fg = Colors.white;
+        fg = TandemTokens.color_on_primary;
         break;
       case TandemButtonVariant.secondary:
         bg = TandemTokens.color_surface;
@@ -52,12 +52,12 @@ class TandemButton extends StatelessWidget {
         border = const BorderSide(color: TandemTokens.color_border, width: 1.0);
         break;
       case TandemButtonVariant.quiet:
-        bg = Colors.transparent;
+        bg = TandemTokens.color_transparent;
         fg = TandemTokens.color_link_direct;
         break;
       case TandemButtonVariant.destructive:
         bg = TandemTokens.color_danger;
-        fg = Colors.white;
+        fg = TandemTokens.color_on_primary;
         break;
     }
 

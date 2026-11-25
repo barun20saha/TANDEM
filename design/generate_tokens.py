@@ -28,6 +28,7 @@ def main():
 
     # Light Colors
     code.append("  // Light Theme Colors")
+    code.append("  static const Color color_transparent = Color(0x00000000);")
     for name, obj in data["color"]["light"].items():
         var_name = name.replace("-", "_")
         code.append(f"  static const Color {var_name} = {hex_to_flutter(obj['value'])};")
