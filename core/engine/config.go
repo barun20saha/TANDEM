@@ -3,6 +3,7 @@ package engine
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,21 +12,22 @@ import (
 
 // EngineConfig holds configuration for the supervised Syncthing engine and daemon.
 type EngineConfig struct {
-	ConfigDir       string
-	DataDir         string
-	ReceiveDir      string
-	GUIAddress      string
-	APIKey          string
-	EngineAPIKey    string
-	DeviceName      string
-	SyncPort        int
-	DiscoveryPort   int
-	LocalDiscovery  bool
-	GlobalDiscovery bool
-	RelaysEnabled   bool
-	NATEnabled      bool
-	NumConnections  int
-	MinDiskFreeMB   int
+	ConfigDir       string `json:"-"`
+	DataDir         string `json:"-"`
+	ReceiveDir      string `json:"receiveDir,omitempty"`
+	BindAddr        string `json:"bind,omitempty"`
+	GUIAddress      string `json:"engineGui,omitempty"`
+	APIKey          string `json:"-"`
+	EngineAPIKey    string `json:"-"`
+	DeviceName      string `json:"deviceName,omitempty"`
+	SyncPort        int    `json:"syncPort,omitempty"`
+	DiscoveryPort   int    `json:"discoveryPort,omitempty"`
+	LocalDiscovery  bool   `json:"localDiscovery,omitempty"`
+	GlobalDiscovery bool   `json:"globalDiscovery,omitempty"`
+	RelaysEnabled   bool   `json:"relays,omitempty"`
+	NATEnabled      bool   `json:"nat,omitempty"`
+	NumConnections  int    `json:"numConnections,omitempty"`
+	MinDiskFreeMB   int    `json:"minDiskFreeMb,omitempty"`
 }
 
 // DefaultConfig loads or initializes persistent configuration and API keys in baseDir.
@@ -61,10 +63,11 @@ func DefaultConfig(baseDir string) (*EngineConfig, error) {
 		hostname = "Tandem Device"
 	}
 
-	return &EngineConfig{
+	cfg := &EngineConfig{
 		ConfigDir:       configDir,
 		DataDir:         dataDir,
 		ReceiveDir:      receiveDir,
+		BindAddr:        "127.0.0.1:8385",
 		GUIAddress:      "127.0.0.1:8384",
 		APIKey:          apiKey,
 		EngineAPIKey:    engineKey,
@@ -77,7 +80,40 @@ func DefaultConfig(baseDir string) (*EngineConfig, error) {
 		NATEnabled:      true,
 		NumConnections:  4,
 		MinDiskFreeMB:   0,
-	}, nil
+	}
+
+	// Optional per-instance overrides from <baseDir>/config.json
+	cfgFile := filepath.Join(baseDir, "config.json")
+	if raw, err := os.ReadFile(cfgFile); err == nil && len(strings.TrimSpace(string(raw))) > 0 {
+		var disk map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &disk); err != nil {
+			return nil, fmt.Errorf("failed parsing %s: %w", cfgFile, err)
+		}
+		if err := json.Unmarshal(raw, cfg); err != nil {
+			return nil, fmt.Errorf("failed decoding %s: %w", cfgFile, err)
+		}
+		cfg.ConfigDir = configDir
+		cfg.DataDir = dataDir
+		cfg.APIKey = apiKey
+		cfg.EngineAPIKey = engineKey
+		if cfg.ReceiveDir == "" {
+			cfg.ReceiveDir = receiveDir
+		}
+		if cfg.BindAddr == "" {
+			cfg.BindAddr = "127.0.0.1:8385"
+		}
+		if cfg.GUIAddress == "" {
+			cfg.GUIAddress = "127.0.0.1:8384"
+		}
+		if cfg.SyncPort <= 0 {
+			cfg.SyncPort = 22000
+		}
+		if cfg.DiscoveryPort <= 0 {
+			cfg.DiscoveryPort = 21027
+		}
+	}
+
+	return cfg, nil
 }
 
 func loadOrCreateKey(path string) (string, error) {

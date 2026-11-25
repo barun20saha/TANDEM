@@ -67,6 +67,53 @@ text = re.sub(r'namespace\s*=?\s*"[^"]*"', 'namespace = "com.tandem.sync"' if is
 text = re.sub(r'applicationId\s*=?\s*"[^"]*"', 'applicationId = "com.tandem.sync"' if is_kts else 'applicationId "com.tandem.sync"', text)
 text = re.sub(r'minSdk\s*=\s*flutter\.minSdkVersion', 'minSdk = 24', text)
 text = re.sub(r'minSdkVersion\s+flutter\.minSdkVersion', 'minSdkVersion 24', text)
+text = re.sub(r'targetSdk\s*=\s*flutter\.targetSdkVersion', 'targetSdk = 35', text)
+text = re.sub(r'targetSdkVersion\s+flutter\.targetSdkVersion', 'targetSdkVersion 35', text)
+
+# Require release keystore from key.properties for release builds (never fall back to debug key)
+if "signingConfigs" not in text:
+    if is_kts:
+        signing_block = """
+    val keystorePropsFile = rootProject.file("key.properties")
+    val keystoreProps = java.util.Properties()
+    if (keystorePropsFile.exists()) {
+        keystoreProps.load(java.io.FileInputStream(keystorePropsFile))
+    }
+    signingConfigs {
+        create("release") {
+            if (!keystorePropsFile.exists()) {
+                throw GradleException("Release signing requires android/key.properties (never fall back to debug key).")
+            }
+            keyAlias = keystoreProps.getProperty("keyAlias")
+            keyPassword = keystoreProps.getProperty("keyPassword")
+            storeFile = file(keystoreProps.getProperty("storeFile"))
+            storePassword = keystoreProps.getProperty("storePassword")
+        }
+    }
+"""
+        text = re.sub(r'(buildTypes\s*\{)', signing_block + r'\n    \1', text, count=1)
+        text = text.replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
+    else:
+        signing_block = """
+    def keystorePropsFile = rootProject.file("key.properties")
+    def keystoreProps = new Properties()
+    if (keystorePropsFile.exists()) {
+        keystoreProps.load(new FileInputStream(keystorePropsFile))
+    }
+    signingConfigs {
+        release {
+            if (!keystorePropsFile.exists()) {
+                throw new GradleException("Release signing requires android/key.properties (never fall back to debug key).")
+            }
+            keyAlias keystoreProps["keyAlias"]
+            keyPassword keystoreProps["keyPassword"]
+            storeFile file(keystoreProps["storeFile"])
+            storePassword keystoreProps["storePassword"]
+        }
+    }
+"""
+        text = re.sub(r'(buildTypes\s*\{)', signing_block + r'\n    \1', text, count=1)
+        text = text.replace('signingConfig signingConfigs.debug', 'signingConfig signingConfigs.release')
 
 if "flavorDimensions" not in text:
     if is_kts:

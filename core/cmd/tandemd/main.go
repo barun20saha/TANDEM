@@ -133,17 +133,42 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create engine config: %v", err)
 	}
-	engineCfg.GUIAddress = *engineGUIFlag
-	engineCfg.SyncPort = *syncPortFlag
-	engineCfg.DiscoveryPort = *discoveryPortFlag
-	engineCfg.GlobalDiscovery = *globalDiscFlag
-	engineCfg.RelaysEnabled = *relaysFlag
-	engineCfg.NATEnabled = *natFlag
-	engineCfg.MinDiskFreeMB = *minDiskFreeMBFlag
-	if *deviceNameFlag != "" {
+	setFlags := make(map[string]bool)
+	flag.Visit(func(f *flag.Flag) {
+		setFlags[f.Name] = true
+	})
+	apiBind := engineCfg.BindAddr
+	if apiBind == "" {
+		apiBind = *apiBindFlag
+	}
+	if setFlags["bind"] {
+		apiBind = *apiBindFlag
+	}
+	if setFlags["engine-gui"] {
+		engineCfg.GUIAddress = *engineGUIFlag
+	}
+	if setFlags["sync-port"] {
+		engineCfg.SyncPort = *syncPortFlag
+	}
+	if setFlags["discovery-port"] {
+		engineCfg.DiscoveryPort = *discoveryPortFlag
+	}
+	if setFlags["global-discovery"] {
+		engineCfg.GlobalDiscovery = *globalDiscFlag
+	}
+	if setFlags["relays"] {
+		engineCfg.RelaysEnabled = *relaysFlag
+	}
+	if setFlags["nat"] {
+		engineCfg.NATEnabled = *natFlag
+	}
+	if setFlags["min-disk-free-mb"] {
+		engineCfg.MinDiskFreeMB = *minDiskFreeMBFlag
+	}
+	if setFlags["device-name"] && *deviceNameFlag != "" {
 		engineCfg.DeviceName = *deviceNameFlag
 	}
-	if *receiveDirFlag != "" {
+	if setFlags["receive-dir"] && *receiveDirFlag != "" {
 		engineCfg.ReceiveDir = *receiveDirFlag
 	}
 
@@ -177,7 +202,7 @@ func main() {
 	sendMgr := send.NewManager(baseDir)
 
 	apiServer := api.NewServer(api.ServerConfig{
-		BindAddr:      *apiBindFlag,
+		BindAddr:      apiBind,
 		APIKey:        engineCfg.APIKey,
 		Version:       version,
 		DeviceID:      localID,
@@ -228,7 +253,7 @@ func main() {
 	}()
 
 	log.Printf("starting tandemd %s (deviceId=%s) API=%s sync=%d discovery=%d",
-		version, localID, *apiBindFlag, engineCfg.SyncPort, engineCfg.DiscoveryPort)
+		version, localID, apiBind, engineCfg.SyncPort, engineCfg.DiscoveryPort)
 
 	if err := apiServer.Start(ctx); err != nil && err != context.Canceled && err.Error() != "http: Server closed" {
 		log.Fatalf("server stopped with error: %v", err)

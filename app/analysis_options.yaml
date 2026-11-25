@@ -9,6 +9,9 @@ analyzer:
   exclude:
     - build/**
     - android/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:

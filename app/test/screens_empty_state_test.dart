@@ -13,9 +13,10 @@ import 'package:tandem/screens/health_check_screen.dart';
 import 'package:tandem/screens/send_screen.dart';
 import 'package:tandem/services/api_client.dart';
 import 'package:tandem/state/tandem_controller.dart';
+import 'openapi_mock_validator.dart';
 
 MockClient _emptyDaemonMock({bool failAll = false}) {
-  return MockClient((http.Request request) async {
+  return contractCheckedMock((http.Request request) async {
     if (failAll) {
       return http.Response('{"error":"unauthorized"}', 401);
     }

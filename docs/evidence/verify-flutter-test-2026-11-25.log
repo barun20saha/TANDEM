@@ -1,0 +1,21 @@
+00:00 +0: loading /home/barun/Desktop/TANDEM/app/test/components/link_line_test.dart
+00:00 +0: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:00 +1: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:00 +2: /home/barun/Desktop/TANDEM/app/test/components/confirm_dialog_test.dart: ConfirmDialog Widget Tests triggers confirm and cancel callbacks properly
+00:01 +3: /home/barun/Desktop/TANDEM/app/test/components/folder_row_test.dart: FolderRow Widget Tests renders label, path, size, and responds to tap
+00:01 +4: /home/barun/Desktop/TANDEM/app/test/components/device_row_test.dart: DeviceRow Widget Tests displays device name, last seen, and responds to tap
+00:01 +5: /home/barun/Desktop/TANDEM/app/test/components/device_row_test.dart: DeviceRow Widget Tests shows This device badge when isThisDevice is true
+00:02 +6: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: (setUpAll)
+00:02 +6: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: WS3 Screenshots & Keyboard Navigation Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states
+00:02 +7: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: WS3 Screenshots & Keyboard Navigation Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states
+00:02 +8: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: WS3 Screenshots & Keyboard Navigation Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states
+00:02 +9: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: WS3 Screenshots & Keyboard Navigation Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states
+00:02 +10: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: WS3 Screenshots & Keyboard Navigation Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states
+00:02 +11: /home/barun/Desktop/TANDEM/app/test/screenshots_ws3_test.dart: WS3 Screenshots & Keyboard Navigation Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states
+00:08 +12: /home/barun/Desktop/TANDEM/app/test/live_daemon_ui_test.dart: Live UI against two real tandemd instances captures real empty, synced, and failing screenshots
+00:09 +13: /home/barun/Desktop/TANDEM/app/test/live_daemon_ui_test.dart: Live UI against two real tandemd instances captures real empty, synced, and failing screenshots
+00:10 +14: /home/barun/Desktop/TANDEM/app/test/live_daemon_ui_test.dart: Live UI against two real tandemd instances captures real empty, synced, and failing screenshots
+00:10 +15: /home/barun/Desktop/TANDEM/app/test/live_daemon_ui_test.dart: Live UI against two real tandemd instances captures real empty, synced, and failing screenshots
+00:10 +16: /home/barun/Desktop/TANDEM/app/test/live_daemon_ui_test.dart: Live UI against two real tandemd instances captures real empty, synced, and failing screenshots
+00:22 +17: /home/barun/Desktop/TANDEM/app/test/live_daemon_ui_test.dart: (tearDownAll)
+00:22 +17: All tests passed!

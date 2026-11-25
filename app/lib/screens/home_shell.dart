@@ -188,10 +188,11 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final t = TandemTheme.of(context);
     final devices = _ctrl.devices;
+    final pairedDevices = devices.where((d) => d.isPaired).toList();
     final folders = _ctrl.folders;
     final status = _ctrl.status;
 
-    if (devices.isEmpty && folders.isEmpty) {
+    if (pairedDevices.isEmpty && folders.isEmpty) {
       return FirstRunScreen(
         deviceName: status?.myDeviceName ?? '',
         deviceId: status?.myDeviceId ?? '',
@@ -199,8 +200,6 @@ class _HomeShellState extends State<HomeShell> {
         onOpenHealth: _openHealth,
       );
     }
-
-    final pairedDevices = devices.where((d) => d.isPaired).toList();
 
     if (t.isDesktop) {
       TandemDevice? selectedDevice;
@@ -388,7 +387,7 @@ class _HomeShellState extends State<HomeShell> {
                                         ? DeviceSyncState.syncing
                                         : DeviceSyncState.upToDate),
                                 lastSeen: d.isPaired
-                                    ? (d.lastSeen.isNotEmpty ? d.lastSeen : 'Paired')
+                                    ? formatLastSeen(d.lastSeen, fallback: 'Paired')
                                     : 'Nearby (not paired)',
                                 onTap: () => setState(() {
                                   _selectedFolderId = null;

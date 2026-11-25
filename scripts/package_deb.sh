@@ -28,6 +28,8 @@ rm -rf "${STAGE_DIR}" "${TAR_STAGE}" "${APPDIR}" "${RPM_ROOT}"
 mkdir -p "${STAGE_DIR}/DEBIAN" \
          "${STAGE_DIR}/usr/bin" \
          "${STAGE_DIR}/usr/lib/systemd/user" \
+         "${STAGE_DIR}/usr/lib/firewalld/services" \
+         "${STAGE_DIR}/etc/ufw/applications.d" \
          "${STAGE_DIR}/usr/share/doc/tandem" \
          "${STAGE_DIR}/usr/share/icons/hicolor/scalable/apps" \
          "${TAR_STAGE}" \
@@ -58,7 +60,23 @@ else
 fi
 chmod 755 "${STAGE_DIR}/usr/bin/tandemd"
 
-# Systemd user unit & icon
+# Bundle pinned Syncthing engine binary (required at runtime by tandemd)
+ENGINE_BIN="${SYNCTHING_BIN:-}"
+if [[ -z "${ENGINE_BIN}" ]]; then
+    if [[ -x "/tmp/tools/syncthing" && "${ARCH}" == "amd64" ]]; then
+        ENGINE_BIN="/tmp/tools/syncthing"
+    elif command -v syncthing >/dev/null 2>&1 && [[ "${ARCH}" == "amd64" ]]; then
+        ENGINE_BIN="$(command -v syncthing)"
+    fi
+fi
+if [[ -n "${ENGINE_BIN}" && -f "${ENGINE_BIN}" ]]; then
+    cp "${ENGINE_BIN}" "${STAGE_DIR}/usr/bin/syncthing"
+    chmod 755 "${STAGE_DIR}/usr/bin/syncthing"
+else
+    echo "warning: SYNCTHING_BIN not found for linux/${ARCH}; package will require external syncthing" >&2
+fi
+
+# Systemd user unit, firewall hints (ufw & firewalld), & icon
 cat << 'EOF' > "${STAGE_DIR}/usr/lib/systemd/user/tandemd.service"
 [Unit]
 Description=Tandem Peer-to-Peer Sync Daemon
@@ -71,6 +89,24 @@ RestartSec=5s
 
 [Install]
 WantedBy=default.target
+EOF
+
+cat << 'EOF' > "${STAGE_DIR}/etc/ufw/applications.d/tandem"
+[Tandem]
+title=Tandem Peer-to-Peer Sync
+description=Direct BEP sync (TCP/UDP 22000) and local LAN discovery (UDP 21027)
+ports=22000/tcp|22000/udp|21027/udp
+EOF
+
+cat << 'EOF' > "${STAGE_DIR}/usr/lib/firewalld/services/tandem.xml"
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Tandem</short>
+  <description>Tandem Peer-to-Peer Sync and Local Discovery</description>
+  <port protocol="tcp" port="22000"/>
+  <port protocol="udp" port="22000"/>
+  <port protocol="udp" port="21027"/>
+</service>
 EOF
 
 cp "${REPO_ROOT}/design/tandem.svg" "${STAGE_DIR}/usr/share/icons/hicolor/scalable/apps/tandem.svg"
@@ -113,6 +149,16 @@ Description: High-performance peer-to-peer file synchronization and transfer
  direct encrypted peer-to-peer links.
 EOF
 
+cat << 'EOF' > "${STAGE_DIR}/DEBIAN/postrm"
+#!/usr/bin/env bash
+set -e
+# Remove program artifacts only; NEVER delete user synced folders or .tandem-trash.
+if command -v ufw >/dev/null 2>&1; then
+    ufw delete allow Tandem >/dev/null 2>&1 || true
+fi
+EOF
+chmod 755 "${STAGE_DIR}/DEBIAN/postrm"
+
 chmod 755 "${STAGE_DIR}" "${STAGE_DIR}/DEBIAN"
 DEB_PATH="${OUT_DIR}/tandem_${VERSION}_linux_${ARCH}.deb"
 if command -v dpkg-deb >/dev/null 2>&1; then
@@ -151,10 +197,15 @@ cp -a ${RPM_PAYLOAD}/* %{buildroot}/
 %files
 /usr/bin/tandemd
 /usr/lib/systemd/user/tandemd.service
+/usr/lib/firewalld/services/tandem.xml
+/etc/ufw/applications.d/tandem
 /usr/share/doc/tandem/LICENSE
 /usr/share/doc/tandem/THIRD_PARTY_NOTICES.md
 /usr/share/icons/hicolor/scalable/apps/tandem.svg
 EOF
+    if [[ -f "${STAGE_DIR}/usr/bin/syncthing" ]]; then
+        echo "/usr/bin/syncthing" >> "${RPM_ROOT}/SPECS/tandem.spec"
+    fi
     if [[ "${HAS_UI}" == "true" ]]; then
         cat << 'EOF' >> "${RPM_ROOT}/SPECS/tandem.spec"
 /opt/tandem
@@ -179,6 +230,10 @@ if [[ -n "${APPIMAGETOOL}" && "${ARCH}" == "amd64" ]]; then
              "${APPDIR}/usr/share/icons/hicolor/256x256/apps" \
              "${APPDIR}/usr/share/icons/hicolor/scalable/apps"
     cp "${STAGE_DIR}/usr/bin/tandemd" "${APPDIR}/usr/bin/tandemd"
+    if [[ -f "${STAGE_DIR}/usr/bin/syncthing" ]]; then
+        cp "${STAGE_DIR}/usr/bin/syncthing" "${APPDIR}/usr/bin/syncthing"
+        chmod 755 "${APPDIR}/usr/bin/syncthing"
+    fi
     cp "${REPO_ROOT}/design/tandem.png" "${APPDIR}/tandem.png"
     cp "${REPO_ROOT}/design/tandem.png" "${APPDIR}/.DirIcon"
     cp "${REPO_ROOT}/design/tandem.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/tandem.png"
@@ -222,6 +277,9 @@ fi
 
 # 4. Portable .tar.gz archive
 cp "${STAGE_DIR}/usr/bin/tandemd" "${TAR_STAGE}/tandemd"
+if [[ -f "${STAGE_DIR}/usr/bin/syncthing" ]]; then
+    cp "${STAGE_DIR}/usr/bin/syncthing" "${TAR_STAGE}/syncthing"
+fi
 cp "${STAGE_DIR}/usr/lib/systemd/user/tandemd.service" "${TAR_STAGE}/tandemd.service"
 cp "${REPO_ROOT}/README.md" "${REPO_ROOT}/LICENSE" "${REPO_ROOT}/THIRD_PARTY_NOTICES.md" "${TAR_STAGE}/"
 TAR_PATH="${OUT_DIR}/tandem-${VERSION}-linux-${ARCH}.tar.gz"

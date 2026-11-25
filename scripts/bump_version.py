@@ -108,9 +108,24 @@ def main() -> int:
         rf"\g<1>{core_semver}\g<2>",
     )
     replace_once(
+        os.path.join(repo_root, "scripts", "package_macos.sh"),
+        r'(<key>CFBundleShortVersionString</key>\s*\n\s*<string>)[^<]*(</string>)',
+        rf"\g<1>{core_semver}\g<2>",
+    )
+    replace_once(
         os.path.join(repo_root, "scripts", "package_windows.ps1"),
         r'(\[string\]\$Version\s*=\s*)"[^"]*"',
         rf'\1"{version}"',
+    )
+    replace_once(
+        os.path.join(repo_root, "scripts", "tandem_installer.iss"),
+        r'(#define AppVersion )"[^"]*"',
+        rf'\1"{version}"',
+    )
+    replace_once(
+        os.path.join(repo_root, "scripts", "tandem_installer.iss"),
+        r'(#define CoreVersion )"[^"]*"',
+        rf'\1"{core_semver}"',
     )
 
     print(

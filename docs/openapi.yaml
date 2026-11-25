@@ -361,6 +361,9 @@ components:
         - myDeviceName
         - state
         - hasInternet
+        - activeTransfers
+        - syncPort
+        - discoveryPort
       properties:
         version:
           type: string
@@ -370,23 +373,35 @@ components:
           type: string
         state:
           type: string
-          enum: [starting, idle, syncing, error]
+          enum: [starting, idle, running, syncing, degraded, error]
         hasInternet:
           type: boolean
         activeTransfers:
+          type: integer
+        syncPort:
+          type: integer
+        discoveryPort:
           type: integer
 
     SystemHealth:
       type: object
       required:
+        - engineReady
+        - syncPortOpen
         - firewallState
         - discoveryWorks
         - storageOk
       properties:
+        engineReady:
+          type: boolean
+        syncPortOpen:
+          type: boolean
         firewallState:
           type: string
           enum: [open, blocked, unknown]
         firewallRemediation:
+          type: string
+        firewallCommand:
           type: string
         discoveryWorks:
           type: boolean
@@ -416,7 +431,6 @@ components:
           enum: [direct-local, direct-internet, relayed, connecting, offline]
         lastSeen:
           type: string
-          format: date-time
         addresses:
           type: array
           items:
@@ -445,7 +459,7 @@ components:
           enum: [sendreceive, sendonly, receiveonly]
         state:
           type: string
-          enum: [idle, syncing, paused, conflict, error]
+          enum: [idle, scanning, syncing, paused, conflict, conflicts, error]
         paused:
           type: boolean
         sharedDevices:
@@ -455,6 +469,8 @@ components:
         totalBytes:
           type: integer
         totalFiles:
+          type: integer
+        needBytes:
           type: integer
         trashCount:
           type: integer
@@ -524,7 +540,12 @@ components:
         - sessionId
         - targetDeviceId
         - state
-        - progress
+        - filesSent
+        - totalFiles
+        - bytesSent
+        - totalBytes
+        - speedBytesPerSec
+        - interfaceUsed
       properties:
         sessionId:
           type: string
@@ -532,7 +553,7 @@ components:
           type: string
         state:
           type: string
-          enum: [queued, sending, completed, failed, cancelled]
+          enum: [queued, sending, transferring, completed, failed, cancelled]
         filesSent:
           type: integer
         totalFiles:

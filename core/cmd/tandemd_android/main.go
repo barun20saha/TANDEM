@@ -11,8 +11,8 @@ import "C"
 import "tandem/core/pal_android"
 
 //export TandemStartEngine
-func TandemStartEngine(configPath *C.char) C.int {
-	return C.int(pal_android.StartEngine(C.GoString(configPath)))
+func TandemStartEngine(configPath *C.char, syncthingPath *C.char) C.int {
+	return C.int(pal_android.StartEngine(C.GoString(configPath), C.GoString(syncthingPath)))
 }
 
 //export TandemStopEngine

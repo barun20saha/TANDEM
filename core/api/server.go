@@ -179,6 +179,11 @@ func (s *Server) Addr() string {
 	return s.addr
 }
 
+// RequireAuthForTest exposes requireAuth middleware for black-box security tests.
+func (s *Server) RequireAuthForTest(next http.HandlerFunc) http.HandlerFunc {
+	return s.requireAuth(next)
+}
+
 func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		host, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -534,7 +539,9 @@ func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
 					if cInfo.Address != "" {
 						activeAddrs = []string{cInfo.Address}
 					}
-					lastSeen = cInfo.At
+					if cInfo.At != "" && !strings.HasPrefix(cInfo.At, "0001-01-01") {
+						lastSeen = cInfo.At
+					}
 				}
 			}
 			s.mu.RLock()

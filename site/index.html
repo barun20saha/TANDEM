@@ -345,6 +345,84 @@
       </tbody>
     </table>
 
+    <section id="install-guides">
+      <h2>First-Run &amp; Install Guides</h2>
+      <div class="grid">
+        <div class="card">
+          <div>
+            <h3>Linux (Stage A)</h3>
+            <div class="note-box" style="border-top:none;padding-top:0">
+              <p><strong>AppImage:</strong> <code>chmod +x tandem-*.AppImage &amp;&amp; ./tandem-*.AppImage</code></p>
+              <p><strong>Debian/Ubuntu:</strong> <code>sudo apt install ./tandem_*_linux_amd64.deb</code></p>
+              <p><strong>Firewall (ufw):</strong> <code>sudo ufw allow Tandem</code> (or ports <code>22000/tcp</code>, <code>22000/udp</code>, <code>21027/udp</code>).</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div>
+            <h3>Windows (Stage B)</h3>
+            <div class="note-box" style="border-top:none;padding-top:0">
+              <p>Run <code>tandem-*-windows-amd64-setup.exe</code>. If unsigned, SmartScreen shows <em>Windows protected your PC</em> &rarr; click <strong>More info</strong> &rarr; <strong>Run anyway</strong> after checking SHA-256.</p>
+              <p>The installer adds Windows Defender Firewall rules bound to <code>tandemd.exe</code>.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div>
+            <h3>macOS (Stage B)</h3>
+            <div class="note-box" style="border-top:none;padding-top:0">
+              <p>Drag <code>Tandem.app</code> to <strong>Applications</strong>. If unsigned/unnotarized, right-click &rarr; <strong>Open</strong> on first launch (or allow in <em>System Settings &rarr; Privacy &amp; Security</em>).</p>
+              <p>Grant <strong>Local Network</strong> access when prompted so LAN discovery works.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div>
+            <h3>Android (Stage C)</h3>
+            <div class="note-box" style="border-top:none;padding-top:0">
+              <p>New signed APKs may trigger Play Protect's <em>"Scan app"</em> prompt — tap <strong>Scan app</strong>.</p>
+              <p>Verify the APK signing certificate SHA-256 with <code>apksigner verify --print-certs tandem-*.apk</code> against the release notes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>Troubleshooting &amp; Checksum Verification</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Symptom</th>
+            <th>Cause</th>
+            <th>Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Verify Download Checksum</strong></td>
+            <td>Confirm artifact integrity before running</td>
+            <td>Linux/macOS: <code>sha256sum -c SHA256SUMS</code> &middot; Windows: <code>Get-FileHash tandem-*.exe -Algorithm SHA256</code></td>
+          </tr>
+          <tr>
+            <td><strong>Firewall blocking peers</strong></td>
+            <td>Inbound TCP/UDP 22000 or UDP 21027 blocked</td>
+            <td>Linux: <code>sudo ufw allow 22000/tcp &amp;&amp; sudo ufw allow 22000/udp &amp;&amp; sudo ufw allow 21027/udp</code>; Windows: re-run <code>install-firewall.ps1</code> as Admin.</td>
+          </tr>
+          <tr>
+            <td><strong>macOS can't see LAN devices</strong></td>
+            <td>Local Network permission denied</td>
+            <td>Open <em>System Settings &rarr; Privacy &amp; Security &rarr; Local Network</em> and enable Tandem.</td>
+          </tr>
+          <tr>
+            <td><strong>Same Wi-Fi, devices don't appear</strong></td>
+            <td>Guest/campus router client (AP) isolation</td>
+            <td>Turn on a phone hotspot (mobile data can stay off), connect your laptop to it, and transfer directly.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <footer>
       <span>Licensed under MIT &amp; third-party open-source notices.</span>
       <span>

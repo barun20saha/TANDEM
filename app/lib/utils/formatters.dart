@@ -18,6 +18,24 @@ String formatSpeed(int bytesPerSec) {
   return '${formatBytes(bytesPerSec)}/s';
 }
 
+String formatLastSeen(String raw, {String fallback = 'Paired'}) {
+  final s = raw.trim();
+  if (s.isEmpty || s.startsWith('0001-01-01')) return fallback;
+  final parsed = DateTime.tryParse(s);
+  if (parsed == null) return s;
+  final local = parsed.toLocal();
+  final diff = DateTime.now().difference(local);
+  if (diff.inSeconds.abs() < 60) return 'Just now';
+  if (diff.inMinutes > 0 && diff.inMinutes < 60) {
+    return '${diff.inMinutes}m ago';
+  }
+  final mm = local.month.toString().padLeft(2, '0');
+  final dd = local.day.toString().padLeft(2, '0');
+  final hh = local.hour.toString().padLeft(2, '0');
+  final min = local.minute.toString().padLeft(2, '0');
+  return '${local.year}-$mm-$dd $hh:$min';
+}
+
 LinkLineState parseLinkState(String raw) {
   switch (raw) {
     case 'direct-local':

@@ -109,36 +109,37 @@ tandem/
 
 ### Prerequisites
 - **Go:** 1.24+
-- **Python:** 3.8+ (for token generation & audits)
+- **Flutter:** 3.10+ (stable channel; tested with Flutter 3.50.1 / Dart 3.14.0)
+- **Python:** 3.8+ (for token generation, version sync & audits)
+- **Syncthing binary (`v2.1.7`):** fetched & SHA-256 verified via `python3 scripts/fetch_syncthing.py --out /tmp/tools/syncthing`
+- **Java 17 & Android SDK / NDK:** required only for Android builds (Stage C)
 - **Docker:** Optional (for self-hosted `infra/` stack)
 
-### 1. Build the Desktop Daemon
+### 1. Check Toolchain & Run Full Local Verification
 ```bash
+bash scripts/setup_dev.sh
+bash scripts/verify_all.sh
+```
+`scripts/verify_all.sh` runs `go vet`, `go build`, `go test -race`, the E2E suite (`tests/e2e`), live daemon port checks (`ss -lntup`), OpenAPI contract tests, `design/audit.py`, `flutter analyze`, and `flutter test`, saving logs to [docs/evidence/](docs/evidence/).
+
+### 2. Build & Run the Desktop Daemon Manually
+```bash
+python3 scripts/fetch_syncthing.py --out /tmp/tools/syncthing
+export PATH="/tmp/tools:$PATH"
 cd core
 go build -o ../bin/tandemd ./cmd/tandemd
-./../bin/tandemd -version
+../bin/tandemd -version
+../bin/tandemd -config /tmp/tandem-cfg
 ```
 
-### 2. Run the Test Suites
+### 3. Build & Run the Flutter App
 ```bash
-# 1. Run all Core unit and integration tests
-cd core
-go test ./...
-
-# 2. Run Chaos & Hardening tests
-cd ../tests
-go test ./...
-
-# 3. Verify Design Token Coverage (target: 0 violations)
-python3 ../design/audit.py
+cd app
+flutter pub get
+flutter analyze --no-fatal-infos
+flutter test --reporter expanded
 ```
-
-### 3. Run Self-Hosted Private Relay & Discovery Stack
-```bash
-cd infra
-docker compose up -d
-curl http://localhost:22070/status
-```
+For current per-OS verification status (Linux tested; Windows, macOS, and Android untested at runtime), see [docs/PLATFORM_STATUS.md](docs/PLATFORM_STATUS.md).
 
 ---
 
@@ -166,7 +167,7 @@ curl http://localhost:22070/status
 
 ## 7. Licences
 
-Tandem is documented in [THIRD_PARTY_NOTICES.md](file:///home/barun/Desktop/TANDEM/THIRD_PARTY_NOTICES.md).
+Tandem is documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Syncthing Core (MPL-2.0)
 - Plexo multipath concept (MIT)
 - Familjen Grotesk & Atkinson Hyperlegible Next fonts (OFL-1.1)

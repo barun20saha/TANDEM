@@ -16,11 +16,12 @@ import 'package:tandem/screens/pairing_screen.dart';
 import 'package:tandem/services/api_client.dart';
 import 'package:tandem/state/tandem_controller.dart';
 import 'package:tandem/theme/tokens.dart';
+import 'openapi_mock_validator.dart';
 
 enum _MockScenario { empty, synced, failing, unreachable }
 
 MockClient _buildScenarioMock(_MockScenario scenario) {
-  return MockClient((http.Request request) async {
+  return contractCheckedMock((http.Request request) async {
     if (scenario == _MockScenario.unreachable) {
       return http.Response('{"error":"unauthorized"}', 401);
     }
@@ -317,7 +318,7 @@ void main() {
   group('WS3 Screenshots & Keyboard Navigation', () {
     testWidgets('Captures 1920, 1280, 390 light/dark PNGs across empty, synced, and failing states',
         (WidgetTester tester) async {
-      final outDir = '${Directory.current.path}/../docs/evidence/screenshots';
+      final outDir = '${Directory.current.path}/../design/screenshots';
 
       final specs = <({
         String name,

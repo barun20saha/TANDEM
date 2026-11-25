@@ -41,7 +41,11 @@ class _TandemAppState extends State<TandemApp> {
     try {
       await TandemStrings.load();
     } catch (_) {}
-    await _controller.initialize();
+    if (_controller.connectionState == ViewLoadState.loading &&
+        _controller.connectionError == null &&
+        _controller.status == null) {
+      await _controller.initialize();
+    }
   }
 
   @override

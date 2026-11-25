@@ -47,6 +47,10 @@ if [[ -n "${FLUTTER_APP_PATH:-}" && -d "${FLUTTER_APP_PATH}" ]]; then
     mkdir -p "${BUNDLE_DIR}/Contents/Helpers"
     cp "${DAEMON_BIN}" "${BUNDLE_DIR}/Contents/Helpers/tandemd"
     chmod 755 "${BUNDLE_DIR}/Contents/Helpers/tandemd"
+    if [[ -n "${SYNCTHING_BIN:-}" && -f "${SYNCTHING_BIN}" ]]; then
+        cp "${SYNCTHING_BIN}" "${BUNDLE_DIR}/Contents/Helpers/syncthing"
+        chmod 755 "${BUNDLE_DIR}/Contents/Helpers/syncthing"
+    fi
 
     # Ensure Info.plist carries version & Local Network Privacy usage description
     python3 - "${BUNDLE_DIR}/Contents/Info.plist" "${CORE_VERSION}" "${VERSION}" << 'PYEOF'
@@ -68,6 +72,10 @@ else
     if [[ -f "${DAEMON_BIN}" ]]; then
         cp "${DAEMON_BIN}" "${BUNDLE_DIR}/Contents/MacOS/tandemd"
         chmod 755 "${BUNDLE_DIR}/Contents/MacOS/tandemd"
+    fi
+    if [[ -n "${SYNCTHING_BIN:-}" && -f "${SYNCTHING_BIN}" ]]; then
+        cp "${SYNCTHING_BIN}" "${BUNDLE_DIR}/Contents/MacOS/syncthing"
+        chmod 755 "${BUNDLE_DIR}/Contents/MacOS/syncthing"
     fi
     cat << EOF > "${BUNDLE_DIR}/Contents/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>

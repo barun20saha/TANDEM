@@ -1,0 +1,131 @@
+name: Build & Smoke Test Linux
+
+on:
+  push:
+    branches: [ main, 'release/**' ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+
+jobs:
+  build-linux:
+    name: Build & Smoke Test Linux (.deb, AppImage, .tar.gz)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux build & packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev rpm curl file desktop-file-utils xvfb
+          curl -fsSL -o /tmp/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x /tmp/appimagetool
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Fetch pinned Syncthing v2.1.7
+        run: |
+          python3 scripts/fetch_syncthing.py --os linux --arch amd64 --out /tmp/tools/syncthing-amd64
+          python3 scripts/fetch_syncthing.py --os linux --arch arm64 --out /tmp/tools/syncthing-arm64
+
+      - name: Build Flutter Linux app
+        working-directory: app
+        run: |
+          if [ ! -d linux ]; then
+            flutter create --platforms=linux --org com.tandem --project-name tandem .
+          fi
+          flutter pub get
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="$(tr -d '[:space:]' < ../VERSION)"; fi
+          CORE_VERSION="${VERSION%%-*}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${CORE_VERSION}"
+          BUILD_NUMBER=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          flutter build linux --release --build-name="${CORE_VERSION}" --build-number="${BUILD_NUMBER}"
+
+      - name: Package Linux (.deb, .rpm, AppImage, .tar.gz)
+        env:
+          OUT_DIR: ${{ github.workspace }}/dist
+          APPIMAGETOOL_BIN: /tmp/appimagetool
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="$(tr -d '[:space:]' < VERSION)"; fi
+          export VERSION
+          export COMMIT_SHA="$(git rev-parse --short HEAD)"
+          export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          chmod +x scripts/package_deb.sh
+          SYNCTHING_BIN=/tmp/tools/syncthing-amd64 FLUTTER_BUNDLE_DIR="app/build/linux/x64/release/bundle" ARCH=amd64 bash scripts/package_deb.sh
+          SYNCTHING_BIN=/tmp/tools/syncthing-arm64 ARCH=arm64 bash scripts/package_deb.sh
+
+      - name: Clean-container .deb install & two-instance packaged sync smoke test
+        run: |
+          DEB_FILE=$(ls dist/tandem_*_linux_amd64.deb | head -n 1)
+          sudo dpkg -i "$DEB_FILE"
+          tandemd -version
+          mkdir -p /tmp/smokeA /tmp/smokeB /tmp/syncA /tmp/syncB
+          echo "packaged-smoke-payload" > /tmp/syncA/smoke.txt
+          tandemd -config /tmp/smokeA -bind 127.0.0.1:18385 -sync-port 24200 -discovery-port 24127 -engine-gui 127.0.0.1:18384 -device-name SmokeA -global-discovery=false -relays=false -nat=false >/tmp/smokeA.log 2>&1 &
+          PIDA=$!
+          tandemd -config /tmp/smokeB -bind 127.0.0.1:18395 -sync-port 24300 -discovery-port 24127 -engine-gui 127.0.0.1:18394 -device-name SmokeB -global-discovery=false -relays=false -nat=false >/tmp/smokeB.log 2>&1 &
+          PIDB=$!
+          trap "kill $PIDA $PIDB 2>/dev/null || true" EXIT
+          python3 - << 'PYEOF'
+          import json, os, time, urllib.request
+          def wait_ready(cfg, port):
+              for _ in range(60):
+                  kp = os.path.join(cfg, "api.key")
+                  if os.path.exists(kp):
+                      k = open(kp).read().strip()
+                      try:
+                          req = urllib.request.Request(f"http://127.0.0.1:{port}/api/v1/health", headers={"Authorization": f"Bearer {k}"})
+                          h = json.loads(urllib.request.urlopen(req, timeout=2).read())
+                          if h.get("engineReady") and h.get("syncPortOpen") and h.get("discoveryWorks"):
+                              return k
+                      except Exception:
+                          pass
+                  time.sleep(0.5)
+              raise RuntimeError(f"daemon {port} not ready")
+          kA = wait_ready("/tmp/smokeA", 18385)
+          kB = wait_ready("/tmp/smokeB", 18395)
+          def api(port, key, method, path, body=None):
+              data = json.dumps(body).encode() if body is not None else None
+              req = urllib.request.Request(f"http://127.0.0.1:{port}/api/v1{path}", data=data, method=method, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+              return json.loads(urllib.request.urlopen(req, timeout=5).read())
+          idA = api(18385, kA, "GET", "/status")["myDeviceId"]
+          idB = api(18395, kB, "GET", "/status")["myDeviceId"]
+          api(18385, kA, "POST", "/devices", {"deviceId": idB, "name": "SmokeB", "addressHint": "tcp://127.0.0.1:24300"})
+          api(18395, kB, "POST", "/devices", {"deviceId": idA, "name": "SmokeA", "addressHint": "tcp://127.0.0.1:24200"})
+          api(18385, kA, "POST", "/folders", {"id": "smoke-f", "path": "/tmp/syncA", "type": "sendreceive", "sharedDevices": [idB]})
+          api(18395, kB, "POST", "/folders", {"id": "smoke-f", "path": "/tmp/syncB", "type": "sendreceive", "sharedDevices": [idA]})
+          for _ in range(60):
+              if os.path.exists("/tmp/syncB/smoke.txt") and open("/tmp/syncB/smoke.txt").read() == "packaged-smoke-payload\n":
+                  print("PACKAGED_SMOKE_MATCH")
+                  break
+              time.sleep(0.5)
+          else:
+              raise RuntimeError("Packaged Linux smoke sync timed out")
+          PYEOF
+          sudo dpkg -r tandem
+          test -f /tmp/syncA/smoke.txt
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: dist/*
+          if-no-files-found: error

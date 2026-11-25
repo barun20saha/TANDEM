@@ -1,9 +1,9 @@
 ; Tandem Windows Inno Setup Installer Script
 #ifndef AppVersion
-  #define AppVersion "0.2.0"
+  #define AppVersion "0.2.3"
 #endif
 #ifndef CoreVersion
-  #define CoreVersion "0.2.0"
+  #define CoreVersion "0.2.3"
 #endif
 #ifndef Arch
   #define Arch "amd64"
@@ -63,3 +63,6 @@ Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Fil
 #if FileExists(StageDir + "\tandem.exe")
 Filename: "{app}\tandem.exe"; Description: "{cm:LaunchProgram,Tandem}"; Flags: nowait postinstall skipifsilent
 #endif
+
+[UninstallRun]
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\uninstall-firewall.ps1"""; Flags: runhidden waituntilterminated

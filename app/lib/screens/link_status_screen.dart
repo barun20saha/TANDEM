@@ -168,7 +168,7 @@ class _LinkStatusScreenState extends State<LinkStatusScreen> {
           _metricRow(
             t,
             'Last seen',
-            device.lastSeen.isNotEmpty ? device.lastSeen : 'Unknown',
+            formatLastSeen(device.lastSeen, fallback: 'Unknown'),
           ),
           _metricRow(
             t,

@@ -54,8 +54,9 @@ class TandemService : Service() {
         val notification = buildForegroundNotification("Tandem is active", "Nearby devices can connect")
         startForeground(NOTIFICATION_ID, notification)
 
-        // Native engine startup
-        startEngineNative(filesDir.absolutePath)
+        // Native engine startup passing nativeLibraryDir/libsyncthing.so
+        val syncthingPath = "${applicationInfo.nativeLibraryDir}/libsyncthing.so"
+        startEngineNative(filesDir.absolutePath, syncthingPath)
         return START_STICKY
     }
 
@@ -114,6 +115,6 @@ class TandemService : Service() {
     }
 
     // JNI Native methods implemented by libtandemd.so
-    private external fun startEngineNative(configPath: String): Int
+    private external fun startEngineNative(configPath: String, syncthingPath: String): Int
     private external fun stopEngineNative(): Int
 }

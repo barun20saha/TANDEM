@@ -6,22 +6,17 @@ import (
 	"tandem/core/pal_android"
 )
 
-func TestAndroidBridgeLifecycle(t *testing.T) {
-	ret := pal_android.StartEngine("/tmp/test-android-config")
-	if ret != 0 {
-		t.Errorf("StartEngine returned %d, expected 0", ret)
+func TestAndroidBridgeRejectsMissingEngineHonestError(t *testing.T) {
+	// Never return fake success when no engine binary exists
+	rc := pal_android.StartEngine(t.TempDir(), "/nonexistent/libsyncthing.so")
+	if rc == 0 {
+		t.Fatalf("expected non-zero failure when engine binary is missing")
 	}
-
-	if pal_android.IsEngineActive() != 1 {
-		t.Errorf("expected engine to be active")
-	}
-
-	ret = pal_android.StopEngine()
-	if ret != 0 {
-		t.Errorf("StopEngine returned %d, expected 0", ret)
-	}
-
 	if pal_android.IsEngineActive() != 0 {
-		t.Errorf("expected engine to be inactive")
+		t.Fatalf("expected IsEngineActive() == 0 when engine failed to start")
 	}
+	if pal_android.LastError() == "" {
+		t.Fatalf("expected descriptive LastError() message")
+	}
+	_ = pal_android.StopEngine()
 }

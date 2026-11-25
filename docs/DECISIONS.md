@@ -109,4 +109,12 @@ This document records architectural decisions, `VERIFY` resolutions against upst
   - Keeps Syncthing unmodified under MPL-2.0 (`THIRD_PARTY_NOTICES.md`) without importing unstable internal `lib/` Go packages.
   - Provides real BEP v1 over TLS 1.3 / QUIC / TCP, local UDP 21027 discovery, NAT traversal, and relay support immediately on desktop platforms.
   - Telemetry (`urAccepted=-1`, `crashReportingEnabled=false`) and self-upgrades (`--no-upgrade`, `autoUpgradeIntervalH=0`) are disabled in generated config.
-  - Note: Android 10+ restricts executing binaries from app data directories; Android engine integration will be evaluated separately in WS4.
+  - Note: Android 10+ restricts executing binaries from app data directories; Android engine integration is evaluated in D7 below.
+
+### DECISION D7 (P5 / Stage C): Android Sync Engine Architecture Spike
+- **Status:** DECIDED (Hybrid In-Process `libtandemd.so` + Packaged `libsyncthing.so` in `jniLibs/<abi>/`, `arm64-v8a` / `armeabi-v7a` / `x86_64`)
+- **Options Evaluated:**
+  1. **Pure `gomobile` / `cgo` import of Syncthing `lib/` packages:** High maintenance risk because Syncthing `lib/` packages have no Go API stability guarantee (`V1`), and compiling all of Syncthing + SQLite/LevelDB into `libtandemd.so` requires maintaining custom patches.
+  2. **Packaged native binary (`libsyncthing.so`) in `jniLibs/<abi>/` + in-process `libtandemd.so`:** On Android 10+ (API 29+), SELinux blocks `execve` from writable `/data/data/<pkg>/files/`, **but** setting `android:extractNativeLibs="true"` places native binaries packaged as `jniLibs/<abi>/libsyncthing.so` into read-only `applicationInfo.nativeLibraryDir`, while `libtandemd.so` runs in-process inside `TandemService` hosting `127.0.0.1:8385`, `discovery.Service`, `pairing.Service`, and `send.Manager`.
+- **Decision:** Run `tandemd` (`api.Server`, `discovery.Service`, `pairing.Service`, `send.Manager`, `SyncthingEngine` supervisor) in-process via `libtandemd.so`, supervising `applicationInfo.nativeLibraryDir/libsyncthing.so` cross-compiled with the Android NDK in CI (`arm64-v8a`, `armeabi-v7a`, `x86_64`).
+- **Verification Status:** `core/pal_android/bridge.go` now wires the real `api.Server` and `SyncthingEngine` lifecycle (unit-tested in Go on Linux); Android NDK cross-compile and physical phone verification remain **untested** until Stage C CI and phone testing complete.

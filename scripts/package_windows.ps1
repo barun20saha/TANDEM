@@ -4,7 +4,8 @@ Param(
     [string]$Arch = "amd64",
     [string]$Channel = "stable",
     [string]$OutDir = "",
-    [string]$FlutterBundleDir = ""
+    [string]$FlutterBundleDir = "",
+    [string]$SyncthingBin = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,18 +49,28 @@ if ($FlutterBundleDir -and (Test-Path $FlutterBundleDir)) {
     Copy-Item -Path (Join-Path $FlutterBundleDir "*") -Destination $StageDir -Recurse -Force
 }
 
+if ($SyncthingBin -and (Test-Path $SyncthingBin)) {
+    Copy-Item $SyncthingBin -Destination (Join-Path $StageDir "syncthing.exe") -Force
+}
+
 Copy-Item (Join-Path $RepoRoot "README.md") -Destination $StageDir
 Copy-Item (Join-Path $RepoRoot "LICENSE") -Destination $StageDir
 Copy-Item (Join-Path $RepoRoot "THIRD_PARTY_NOTICES.md") -Destination $StageDir
 
 $FirewallScript = @"
-# Run as Administrator to open Tandem P2P ports in Windows Defender Firewall
-New-NetFirewallRule -DisplayName "Tandem Sync (TCP 22000)" -Direction Inbound -Protocol TCP -LocalPort 22000 -Action Allow -ErrorAction SilentlyContinue | Out-Null
-New-NetFirewallRule -DisplayName "Tandem Sync (UDP 22000)" -Direction Inbound -Protocol UDP -LocalPort 22000 -Action Allow -ErrorAction SilentlyContinue | Out-Null
-New-NetFirewallRule -DisplayName "Tandem Local Discovery (UDP 21027)" -Direction Inbound -Protocol UDP -LocalPort 21027 -Action Allow -ErrorAction SilentlyContinue | Out-Null
+# Run as Administrator to open Tandem P2P ports in Windows Defender Firewall (bound to tandemd.exe)
+$DaemonPath = Join-Path $PSScriptRoot "tandemd.exe"
+New-NetFirewallRule -DisplayName "Tandem Sync (TCP 22000)" -Direction Inbound -Program $DaemonPath -Protocol TCP -LocalPort 22000 -Action Allow -ErrorAction SilentlyContinue | Out-Null
+New-NetFirewallRule -DisplayName "Tandem Sync (UDP 22000)" -Direction Inbound -Program $DaemonPath -Protocol UDP -LocalPort 22000 -Action Allow -ErrorAction SilentlyContinue | Out-Null
+New-NetFirewallRule -DisplayName "Tandem Local Discovery (UDP 21027)" -Direction Inbound -Program $DaemonPath -Protocol UDP -LocalPort 21027 -Action Allow -ErrorAction SilentlyContinue | Out-Null
 Write-Host "Tandem Windows Firewall rules installed."
 "@
 Set-Content -Path (Join-Path $StageDir "install-firewall.ps1") -Value $FirewallScript -Encoding UTF8
+
+$UninstallFirewallScript = @"
+Remove-NetFirewallRule -DisplayName "Tandem*" -ErrorAction SilentlyContinue | Out-Null
+"@
+Set-Content -Path (Join-Path $StageDir "uninstall-firewall.ps1") -Value $UninstallFirewallScript -Encoding UTF8
 
 # 1. Portable ZIP bundle
 $ZipPath = Join-Path $OutDir "tandem-$Version-windows-$Arch.zip"

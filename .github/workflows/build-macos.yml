@@ -1,0 +1,83 @@
+name: Build & Smoke Test macOS
+
+on:
+  push:
+    branches: [ main, 'release/**' ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+
+jobs:
+  build-macos:
+    name: Build & Smoke Test macOS (.dmg & universal .app)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Report runner architecture
+        run: uname -a && arch
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Fetch pinned Syncthing v2.1.7 (darwin universal)
+        run: python3 scripts/fetch_syncthing.py --os darwin --arch universal --out /tmp/tools/syncthing
+
+      - name: Build Flutter macOS app
+        working-directory: app
+        run: |
+          if [ ! -d macos ]; then
+            flutter create --platforms=macos --org com.tandem --project-name tandem .
+          fi
+          flutter pub get
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="$(tr -d '[:space:]' < ../VERSION)"; fi
+          CORE_VERSION="${VERSION%%-*}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${CORE_VERSION}"
+          BUILD_NUMBER=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          flutter build macos --release --build-name="${CORE_VERSION}" --build-number="${BUILD_NUMBER}"
+
+      - name: Package macOS Universal Bundle & DMG
+        env:
+          OUT_DIR: ${{ github.workspace }}/dist
+          FLUTTER_APP_PATH: ${{ github.workspace }}/app/build/macos/Build/Products/Release/tandem.app
+          SYNCTHING_BIN: /tmp/tools/syncthing
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="$(tr -d '[:space:]' < VERSION)"; fi
+          export VERSION
+          export COMMIT_SHA="$(git rev-parse --short HEAD)"
+          export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          chmod +x scripts/package_macos.sh
+          bash scripts/package_macos.sh
+
+      - name: Embedded daemon health & Info.plist Local Network check
+        run: |
+          DMG=$(ls dist/tandem-*-macos-universal.dmg | head -n 1)
+          hdiutil attach "$DMG" -mountpoint /tmp/tandem-dmg -nobrowse
+          trap "hdiutil detach /tmp/tandem-dmg || true" EXIT
+          plutil -p /tmp/tandem-dmg/Tandem.app/Contents/Info.plist | grep -F "NSLocalNetworkUsageDescription"
+          /tmp/tandem-dmg/Tandem.app/Contents/Helpers/tandemd -version
+          /tmp/tandem-dmg/Tandem.app/Contents/Helpers/syncthing --version
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-macos
+          path: dist/*
+          if-no-files-found: error

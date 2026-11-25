@@ -1,0 +1,5 @@
+udp   UNCONN 0      0            0.0.0.0:24127      0.0.0.0:*    users:(("tandemd-verify-",pid=2219,fd=9)) 
+udp   UNCONN 0      0                  *:24200            *:*    users:(("syncthing",pid=2253,fd=15))      
+tcp   LISTEN 0      4096       127.0.0.1:18385      0.0.0.0:*    users:(("tandemd-verify-",pid=2219,fd=10))
+tcp   LISTEN 0      4096               *:24200            *:*    users:(("syncthing",pid=2253,fd=14))      
+{"batteryOptimized": false, "discoveryWorks": true, "engineReady": true, "firewallCommand": "sudo ufw allow 24200/tcp && sudo ufw allow 24200/udp && sudo ufw allow 24127/udp", "firewallRemediation": "Your Linux firewall may block incoming peer connections. Allow Tandem sync and discovery ports.", "firewallState": "open", "inotifyExhausted": false, "storageOk": true, "syncPortOpen": true}

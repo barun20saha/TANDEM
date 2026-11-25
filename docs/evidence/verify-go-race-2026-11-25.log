@@ -1,0 +1,17 @@
+ok  	tandem/core/api	1.353s
+?   	tandem/core/cmd/tandemd	[no test files]
+?   	tandem/core/cmd/tandemd_android	[no test files]
+ok  	tandem/core/discovery	1.022s
+ok  	tandem/core/engine	1.031s
+ok  	tandem/core/engine/compat	1.023s
+ok  	tandem/core/folders	1.020s
+ok  	tandem/core/linkmanager	1.013s
+ok  	tandem/core/multipath	1.015s
+ok  	tandem/core/pairing	1.017s
+ok  	tandem/core/pal	1.126s
+ok  	tandem/core/pal_android	1.019s
+?   	tandem/core/pal_darwin	[no test files]
+ok  	tandem/core/pal_linux	1.089s
+?   	tandem/core/pal_windows	[no test files]
+ok  	tandem/core/send	1.010s
+ok  	tandem/core/trash	1.031s

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Staged CI/CD workflows (`.github/workflows/test.yml`, `build-linux.yml`, `build-windows.yml`, `build-macos.yml`, `build-android.yml`, `release.yml`) with clean-container Linux `.deb` smoke tests and `apksigner` debug-key rejection checks.
+- Developer setup and full Stage A verification scripts (`scripts/setup_dev.sh`, `scripts/verify_all.sh`).
+- OpenAPI contract parity tests in Go (`core/api/contract_test.go`) and Dart (`app/test/openapi_contract_test.dart`, `app/test/openapi_mock_validator.dart`), plus loopback/pairing security tests (`core/api/security_test.go`).
+- Flutter desktop runner scaffolds (`linux`, `windows`, `macos`), `app/integration_test/app_live_test.dart`, and `app/test/live_daemon_ui_test.dart` capturing real two-daemon live screenshots under `design/screenshots/live/`.
+- Per-instance `config.json` port configuration (`core/engine/config.go`), Android real engine bridge wiring (`core/pal_android/bridge.go`), and documentation (`docs/SECURITY_REVIEW.md`, `docs/ROLLBACK.md`, `docs/MANUAL_TESTS.md`, `docs/ANDROID_PERMISSIONS.md`, `docs/ANDROID_TEST_CHECKLIST.md`, `docs/FINAL_REPORT.md`).
+
+### Fixed
+- Bundled pinned `syncthing` binary in Linux, Windows, and macOS packaging scripts (`scripts/package_deb.sh`, `package_windows.ps1`, `package_macos.sh`) plus Windows uninstall firewall cleanup without touching user folders.
+- Fixed `FirstRunScreen` triggering when unpaired nearby devices exist (`pairedDevices.isEmpty`), zero-timestamp `0001-01-01` formatting in `lastSeen`, and `docs/openapi.yaml` schema alignment (`SystemHealth`, `SendSession`, `DaemonStatus`, `Folder`).
+
+### Known Issues
+- Prior `v0.2.3` release is non-functional (stub engine, gallery UI, debug-signed Android APK).
+- Windows, macOS, and Android remain runtime-untested until CI Stage B/C runners and physical phone tests complete.
+
 ## [0.2.3] - 2026-11-25
 
 ### Fixed

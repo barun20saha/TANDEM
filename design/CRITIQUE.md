@@ -1,6 +1,6 @@
 # Tandem WS3 Visual Self-Critique (`S1`–`S11`)
 
-Evaluated rendered PNG captures under `docs/evidence/screenshots/` across `1920x1080`, `1280x800`, and `390x844` in Light and Dark themes against `TANDEM_AGENT_GUIDE.md` Sections 8–10 and `design/PLAN.md`.
+Evaluated rendered PNG captures under `design/screenshots/` across `1920x1080`, `1280x800`, and `390x844` in Light and Dark themes against `TANDEM_AGENT_GUIDE.md` Sections 8–10 and `design/PLAN.md`.
 
 ---
 

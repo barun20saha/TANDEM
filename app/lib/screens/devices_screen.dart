@@ -108,7 +108,7 @@ class DevicesScreen extends StatelessWidget {
                         d.downloadRateBytesPerSec > 0)
                     ? DeviceSyncState.syncing
                     : DeviceSyncState.upToDate,
-                lastSeen: d.lastSeen.isNotEmpty ? d.lastSeen : 'Paired',
+                lastSeen: formatLastSeen(d.lastSeen, fallback: 'Paired'),
                 onTap: () => onSelectDevice?.call(d),
               ),
             ),

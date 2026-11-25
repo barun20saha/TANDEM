@@ -1,0 +1,6 @@
+=== RUN   TestOpenAPIContractAndAuthParity
+--- PASS: TestOpenAPIContractAndAuthParity (0.12s)
+=== RUN   TestSecurity_LoopbackOnlyAndPairingConfirmationGate
+--- PASS: TestSecurity_LoopbackOnlyAndPairingConfirmationGate (0.00s)
+PASS
+ok  	tandem/core/api	0.118s

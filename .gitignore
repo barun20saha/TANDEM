@@ -1,11 +1,34 @@
 # Binaries and build artifacts
 bin/
+build/
+dist/
+release-assets/
 *.exe
 *.dll
 *.so
 *.dylib
 *.apk
+*.aab
 *.a
+*.deb
+*.rpm
+*.AppImage
+*.dmg
+*.zip
+*.tar.gz
+app/android/app/src/main/jniLibs/
+
+# Secrets, keystores, and local credentials (must never be committed)
+*.jks
+*.keystore
+key.properties
+api.key
+engine.key
+*.p12
+*.pfx
+*.pem
+.env
+.env.*
 
 # Temporary files
 .tandem-tmp/

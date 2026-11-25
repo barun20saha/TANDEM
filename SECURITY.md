@@ -3,9 +3,14 @@
 ## Supported Versions
 
 | Version | Supported | Notes |
-|---------|-----------|-------|
-| `0.2.x` | Yes | Active multi-platform release branch |
-| `0.1.x` | Security fixes only | Initial alpha milestone |
+|---|---|---|
+| `0.3.x` (Stage A) | Yes | Linux desktop pre-release branch |
+| `0.2.x` | No | Superseded (`v0.2.3` non-functional; upgrade recommended) |
+| `0.1.x` | No | Initial alpha milestone |
+
+## Scope
+- **In scope:** `tandemd` loopback REST/SSE API (`127.0.0.1:8385`), API key/TLS certificate handling, BEP transport & pairing verification, path traversal / symlink / `.tandem-trash` safety, and OS installer/firewall scripts.
+- **Out of scope:** Third-party community Syncthing relay infrastructure availability, physical device compromise, and issues on platforms explicitly marked untested in [docs/PLATFORM_STATUS.md](docs/PLATFORM_STATUS.md).
 
 ## Reporting a Vulnerability
 

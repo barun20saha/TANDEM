@@ -1,0 +1,95 @@
+name: Build & Smoke Test Windows
+
+on:
+  push:
+    branches: [ main, 'release/**' ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+
+jobs:
+  build-windows:
+    name: Build & Smoke Test Windows (.exe setup & .zip)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Ensure Inno Setup 6
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: Fetch pinned Syncthing v2.1.7
+        shell: pwsh
+        run: |
+          python scripts/fetch_syncthing.py --os windows --arch amd64 --out C:\tools\syncthing-amd64.exe
+          python scripts/fetch_syncthing.py --os windows --arch arm64 --out C:\tools\syncthing-arm64.exe
+
+      - name: Build Flutter Windows app
+        working-directory: app
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "windows")) {
+            flutter create --platforms=windows --org com.tandem --project-name tandem .
+          }
+          flutter pub get
+          $Version = "${{ inputs.version }}"
+          if (-not $Version) { $Version = (Get-Content ..\VERSION -Raw).Trim() }
+          $Core = ($Version -split "-")[0]
+          $Parts = $Core.Split(".")
+          $BuildNumber = [int]$Parts[0] * 10000 + [int]$Parts[1] * 100 + [int]$Parts[2]
+          flutter build windows --release --build-name="$Core" --build-number="$BuildNumber"
+
+      - name: Package Windows (.exe & .zip)
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $Version = "${{ inputs.version }}"
+          if (-not $Version) { $Version = (Get-Content VERSION -Raw).Trim() }
+          $OutDir = "${{ github.workspace }}\dist"
+          $FlutterBundle = "${{ github.workspace }}\app\build\windows\x64\runner\Release"
+          if (-not (Test-Path $FlutterBundle)) {
+            $FlutterBundle = "${{ github.workspace }}\app\build\windows\runner\Release"
+          }
+          & .\scripts\package_windows.ps1 -Version "$Version" -Arch "amd64" -OutDir $OutDir -FlutterBundleDir $FlutterBundle -SyncthingBin "C:\tools\syncthing-amd64.exe"
+          & .\scripts\package_windows.ps1 -Version "$Version" -Arch "arm64" -OutDir $OutDir -SyncthingBin "C:\tools\syncthing-arm64.exe"
+
+      - name: Silent-install smoke test, firewall rules & two-instance sync
+        shell: pwsh
+        run: |
+          $SetupExe = (Get-ChildItem dist\*-windows-amd64-setup.exe | Select-Object -First 1).FullName
+          Start-Process -FilePath $SetupExe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+          $InstalledDaemon = "${env:ProgramFiles}\Tandem\tandemd.exe"
+          if (-not (Test-Path $InstalledDaemon)) { throw "tandemd.exe missing after silent install" }
+          & $InstalledDaemon -version
+          $rules = Get-NetFirewallRule -DisplayName "Tandem*"
+          if ($rules.Count -lt 3) { throw "Expected Tandem firewall rules after install" }
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: dist/*
+          if-no-files-found: error
