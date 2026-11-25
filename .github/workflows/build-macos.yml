@@ -59,7 +59,6 @@ jobs:
       - name: Package macOS Universal Bundle & DMG
         env:
           OUT_DIR: ${{ github.workspace }}/dist
-          FLUTTER_APP_PATH: ${{ github.workspace }}/app/build/macos/Build/Products/Release/tandem.app
           SYNCTHING_BIN: /tmp/tools/syncthing
         run: |
           VERSION="${{ inputs.version }}"
@@ -67,14 +66,24 @@ jobs:
           export VERSION
           export COMMIT_SHA="$(git rev-parse --short HEAD)"
           export BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          RELEASE_DIR="${{ github.workspace }}/app/build/macos/Build/Products/Release"
+          FLUTTER_APP_PATH="$(find "$RELEASE_DIR" -maxdepth 1 -name '*.app' | head -n 1 || true)"
+          if [ -z "$FLUTTER_APP_PATH" ] || [ ! -d "$FLUTTER_APP_PATH" ]; then
+            echo "error: no built .app bundle found under $RELEASE_DIR" >&2
+            ls -la "$RELEASE_DIR" || true
+            exit 1
+          fi
+          export FLUTTER_APP_PATH
           chmod +x scripts/package_macos.sh
           bash scripts/package_macos.sh
 
       - name: Embedded daemon health & Info.plist Local Network check
         run: |
           DMG=$(ls dist/tandem-*-macos-universal.dmg | head -n 1)
+          mkdir -p /tmp/tandem-dmg
           hdiutil attach "$DMG" -mountpoint /tmp/tandem-dmg -nobrowse
-          trap "hdiutil detach /tmp/tandem-dmg || true" EXIT
+          trap "hdiutil detach /tmp/tandem-dmg -force || true" EXIT
+          ls -la /tmp/tandem-dmg/Tandem.app/Contents/
           plutil -p /tmp/tandem-dmg/Tandem.app/Contents/Info.plist | grep -F "NSLocalNetworkUsageDescription"
           /tmp/tandem-dmg/Tandem.app/Contents/Helpers/tandemd -version
           /tmp/tandem-dmg/Tandem.app/Contents/Helpers/syncthing --version

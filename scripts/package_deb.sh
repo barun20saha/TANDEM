@@ -172,10 +172,15 @@ if command -v rpmbuild >/dev/null 2>&1 && [[ "${RPM_ARCH}" == "$(uname -m)" ]]; 
     RPM_PAYLOAD="${RPM_ROOT}/SOURCES/tandem-${CORE_VERSION}"
     mkdir -p "${RPM_PAYLOAD}"
     cp -a "${STAGE_DIR}/usr" "${RPM_PAYLOAD}/"
+    if [[ -d "${STAGE_DIR}/etc" ]]; then
+        cp -a "${STAGE_DIR}/etc" "${RPM_PAYLOAD}/"
+    fi
     if [[ -d "${STAGE_DIR}/opt" ]]; then
         cp -a "${STAGE_DIR}/opt" "${RPM_PAYLOAD}/"
     fi
     cat << EOF > "${RPM_ROOT}/SPECS/tandem.spec"
+%global debug_package %{nil}
+%define _build_id_links none
 Name:           tandem
 Version:        ${CORE_VERSION}
 Release:        1
@@ -213,7 +218,7 @@ EOF
 /usr/share/applications/tandem.desktop
 EOF
     fi
-    rpmbuild --define "_topdir ${RPM_ROOT}" --target "${RPM_ARCH}" -bb "${RPM_ROOT}/SPECS/tandem.spec" >/dev/null
+    rpmbuild --define "_topdir ${RPM_ROOT}" --target "${RPM_ARCH}" -bb "${RPM_ROOT}/SPECS/tandem.spec"
     RPM_BUILT="$(find "${RPM_ROOT}/RPMS" -name '*.rpm' | head -n 1)"
     if [[ -n "${RPM_BUILT}" ]]; then
         RPM_OUT="${OUT_DIR}/tandem-${VERSION}-linux-${RPM_ARCH}.rpm"

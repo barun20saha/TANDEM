@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,39 @@ import 'package:tandem/main.dart';
 import 'package:tandem/screens/first_run_screen.dart';
 import 'package:tandem/services/api_client.dart';
 import 'package:tandem/state/tandem_controller.dart';
+
+Future<int> _freeTcpPort() async {
+  final srv = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+  final p = srv.port;
+  await srv.close();
+  return p;
+}
+
+Future<int> _freeUdpPort() async {
+  final sock = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);
+  final p = sock.port;
+  sock.close();
+  return p;
+}
+
+String _findCoreDir() {
+  final candidates = <Directory>[Directory.current];
+  try {
+    candidates.add(File(Platform.resolvedExecutable).parent);
+  } catch (_) {}
+  for (final start in candidates) {
+    var cur = start.absolute;
+    for (var i = 0; i < 8; i++) {
+      final probe = Directory('${cur.path}/core');
+      if (File('${probe.path}/cmd/tandemd/main.go').existsSync()) {
+        return probe.path;
+      }
+      if (cur.parent.path == cur.path) break;
+      cur = cur.parent;
+    }
+  }
+  throw StateError('Unable to locate core/ directory from ${Directory.current.path}');
+}
 
 /// Live desktop integration test (Gate A5) intended for `flutter test -d linux`
 /// under `xvfb-run` with `go` and `syncthing` on PATH.
@@ -19,17 +53,26 @@ void main() {
     final tmpRoot = Directory.systemTemp.createTempSync('tandem-it-');
     addTearDown(() => tmpRoot.deleteSync(recursive: true));
 
+    final coreDir = _findCoreDir();
     final binPath = '${tmpRoot.path}/tandemd';
     final buildRes = Process.runSync(
       'go',
       ['build', '-o', binPath, './cmd/tandemd'],
-      workingDirectory: '../core',
+      workingDirectory: coreDir,
       environment: {
         ...Platform.environment,
         'CGO_ENABLED': '0',
       },
     );
-    expect(buildRes.exitCode, 0, reason: buildRes.stderr.toString());
+    expect(buildRes.exitCode, 0, reason: 'go build failed: ${buildRes.stderr}');
+
+    final apiPortA = await _freeTcpPort();
+    final syncPortA = await _freeTcpPort();
+    final guiPortA = await _freeTcpPort();
+    final apiPortB = await _freeTcpPort();
+    final syncPortB = await _freeTcpPort();
+    final guiPortB = await _freeTcpPort();
+    final discPort = await _freeUdpPort();
 
     final cfgA = Directory('${tmpRoot.path}/cfgA')..createSync();
     final cfgB = Directory('${tmpRoot.path}/cfgB')..createSync();
@@ -37,28 +80,37 @@ void main() {
     final syncB = Directory('${tmpRoot.path}/syncB')..createSync();
     File('${syncA.path}/hello.txt').writeAsStringSync('live-integration-sync');
 
+    final logsA = StringBuffer();
+    final logsB = StringBuffer();
+
     final procA = await Process.start(binPath, [
       '-config', cfgA.path,
-      '-bind', '127.0.0.1:19385',
-      '-sync-port', '25200',
-      '-discovery-port', '25127',
-      '-engine-gui', '127.0.0.1:19384',
+      '-bind', '127.0.0.1:$apiPortA',
+      '-sync-port', '$syncPortA',
+      '-discovery-port', '$discPort',
+      '-engine-gui', '127.0.0.1:$guiPortA',
       '-device-name', 'LiveNodeA',
       '-global-discovery=false',
       '-relays=false',
       '-nat=false',
     ]);
+    procA.stdout.transform(utf8.decoder).listen(logsA.write);
+    procA.stderr.transform(utf8.decoder).listen(logsA.write);
+
     final procB = await Process.start(binPath, [
       '-config', cfgB.path,
-      '-bind', '127.0.0.1:19485',
-      '-sync-port', '25300',
-      '-discovery-port', '25127',
-      '-engine-gui', '127.0.0.1:19484',
+      '-bind', '127.0.0.1:$apiPortB',
+      '-sync-port', '$syncPortB',
+      '-discovery-port', '$discPort',
+      '-engine-gui', '127.0.0.1:$guiPortB',
       '-device-name', 'LiveNodeB',
       '-global-discovery=false',
       '-relays=false',
       '-nat=false',
     ]);
+    procB.stdout.transform(utf8.decoder).listen(logsB.write);
+    procB.stderr.transform(utf8.decoder).listen(logsB.write);
+
     addTearDown(() async {
       procA.kill(ProcessSignal.sigterm);
       procB.kill(ProcessSignal.sigterm);
@@ -70,14 +122,14 @@ void main() {
       });
     });
 
-    Future<ApiClient> waitReady(String cfgDir, String bind) async {
+    Future<ApiClient> waitReady(String cfgDir, int port, StringBuffer logs) async {
       final deadline = DateTime.now().add(const Duration(seconds: 30));
       while (DateTime.now().isBefore(deadline)) {
         final keyFile = File('$cfgDir/api.key');
         if (keyFile.existsSync()) {
           final key = keyFile.readAsStringSync().trim();
           if (key.isNotEmpty) {
-            final client = ApiClient(baseUrl: 'http://$bind/api/v1', apiKey: key);
+            final client = ApiClient(baseUrl: 'http://127.0.0.1:$port/api/v1', apiKey: key);
             try {
               final h = await client.getHealth();
               if (h.engineReady) return client;
@@ -86,17 +138,18 @@ void main() {
         }
         await Future<void>.delayed(const Duration(milliseconds: 250));
       }
-      throw StateError('Daemon on $bind failed to become healthy');
+      throw StateError('Daemon on 127.0.0.1:$port failed to become healthy.\nLogs:\n$logs');
     }
 
-    final clientA = await waitReady(cfgA.path, '127.0.0.1:19385');
-    final clientB = await waitReady(cfgB.path, '127.0.0.1:19485');
+    final clientA = await waitReady(cfgA.path, apiPortA, logsA);
+    final clientB = await waitReady(cfgB.path, apiPortB, logsB);
 
     final ctrlA = TandemController(client: clientA);
     addTearDown(ctrlA.dispose);
+    await ctrlA.refreshAll();
 
     await tester.pumpWidget(TandemApp(controller: ctrlA, themeMode: ThemeMode.light));
-    await tester.pumpAndSettle(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
     expect(find.byType(FirstRunScreen), findsOneWidget);
 
     final statusA = await clientA.getStatus();
@@ -104,12 +157,12 @@ void main() {
     await clientA.pairDevice(
       deviceId: statusB.myDeviceId,
       name: 'LiveNodeB',
-      addressHint: 'tcp://127.0.0.1:25300',
+      addressHint: 'tcp://127.0.0.1:$syncPortB',
     );
     await clientB.pairDevice(
       deviceId: statusA.myDeviceId,
       name: 'LiveNodeA',
-      addressHint: 'tcp://127.0.0.1:25200',
+      addressHint: 'tcp://127.0.0.1:$syncPortA',
     );
     await clientA.addFolder(
       id: 'live-shared',

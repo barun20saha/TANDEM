@@ -40,7 +40,11 @@ elif [[ -f "${REPO_ROOT}/bin/tandemd_darwin_arm64" ]]; then
 fi
 
 # If a Flutter macOS .app bundle is supplied, wrap it and place tandemd in Contents/Helpers
-if [[ -n "${FLUTTER_APP_PATH:-}" && -d "${FLUTTER_APP_PATH}" ]]; then
+if [[ -n "${FLUTTER_APP_PATH:-}" ]]; then
+    if [[ ! -d "${FLUTTER_APP_PATH}" ]]; then
+        echo "error: FLUTTER_APP_PATH does not exist: ${FLUTTER_APP_PATH}" >&2
+        exit 1
+    fi
     echo "Integrating Flutter macOS app bundle from ${FLUTTER_APP_PATH}..."
     rm -rf "${BUNDLE_DIR}"
     cp -a "${FLUTTER_APP_PATH}" "${BUNDLE_DIR}"
@@ -104,9 +108,11 @@ fi
 cp "${REPO_ROOT}/LICENSE" "${BUNDLE_DIR}/Contents/Resources/LICENSE"
 cp "${REPO_ROOT}/THIRD_PARTY_NOTICES.md" "${BUNDLE_DIR}/Contents/Resources/THIRD_PARTY_NOTICES.md"
 
-# Optional codesigning if identity is configured
+# Sign with Developer ID if configured, otherwise re-apply ad-hoc signature after bundling Helpers/Info.plist
 if [[ -n "${APPLE_SIGNING_IDENTITY:-}" ]] && command -v codesign >/dev/null 2>&1; then
     codesign --force --deep --options runtime --sign "${APPLE_SIGNING_IDENTITY}" "${BUNDLE_DIR}"
+elif command -v codesign >/dev/null 2>&1; then
+    codesign --force --deep --sign - "${BUNDLE_DIR}"
 fi
 
 TAR_PATH="${OUT_DIR}/tandem-${VERSION}-macos-universal.tar.gz"
