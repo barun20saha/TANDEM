@@ -6,6 +6,9 @@ analyzer:
     constant_identifier_names: ignore
     non_constant_identifier_names: ignore
     deprecated_member_use: ignore
+  exclude:
+    - build/**
+    - android/**
 
 linter:
   rules:
